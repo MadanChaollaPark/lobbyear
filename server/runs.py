@@ -177,3 +177,17 @@ async def start_run(req: StartRunRequest) -> StartRunResponse:
 @router.get("/runs")
 def list_runs() -> dict[str, Any]:
     return {"runs": REGISTRY.list()}
+
+
+@router.get("/runs/{run_id}")
+def get_run(run_id: str) -> dict[str, Any]:
+    run = REGISTRY.get(run_id)
+    if run is None:
+        raise HTTPException(404, f"run not found: {run_id}")
+    return {
+        "id": run.id,
+        "status": run.status,
+        "error": run.error,
+        "event_count": len(run.events),
+        "briefing": run.briefing_snapshot,
+    }
