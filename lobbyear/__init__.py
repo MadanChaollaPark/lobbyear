@@ -10,5 +10,6 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from .profile import ClientProfile, load_profile  # noqa: E402
+from .briefing import Briefing, Mention  # noqa: E402
 
-__all__ = ["ClientProfile", "load_profile"]
+__all__ = ["ClientProfile", "load_profile", "Briefing", "Mention"]
