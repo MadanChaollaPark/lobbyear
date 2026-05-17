@@ -53,7 +53,10 @@ if _ARTIFACTS_DIR.exists():
 
 @app.get("/")
 def root() -> FileResponse | dict[str, str]:
+    live = _WEB_DIR / "live.html"
+    if live.exists():
+        return FileResponse(str(live))
     viewer = _WEB_DIR / "viewer.html"
     if viewer.exists():
         return FileResponse(str(viewer))
-    return {"message": "LobbyEar server is up. /web/viewer.html will appear once it is built."}
+    return {"message": "LobbyEar server is up. /web/live.html will appear once it is built."}

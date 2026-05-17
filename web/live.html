@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>LobbyEar · live</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-2: #1c232c;
+    --text: #e6edf3;
+    --muted: #9aa7b3;
+    --accent: #7ee787;
+    --warn: #f0b429;
+    --danger: #ff7b72;
+    --link: #79c0ff;
+    --border: #30363d;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui; }
+  body { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .meta { color: var(--muted); font-size: 12px; }
+  .card { background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px 14px; margin-bottom: 10px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; border: 1px solid var(--border); margin-right: 6px;
+    color: var(--muted); background: var(--panel-2); }
+  .badge.running { color: var(--warn); border-color: #f0b42944; }
+  .badge.finished{ color: var(--accent); border-color: #7ee78744; }
+  .badge.error   { color: var(--danger); border-color: #ff7b7244; }
+  .start-form input, .start-form select {
+    background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); padding: 8px 10px;
+    border-radius: 6px; font-size: 13px; width: 100%; }
+  .start-form label { display: block; margin: 8px 0 3px; font-size: 12px; color: var(--muted); }
+  .start-form button {
+    background: var(--accent); color: #0d1117; border: 0; padding: 10px 16px;
+    border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+  .start-form button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .empty { color: var(--muted); font-style: italic; }
+</style>
+</head>
+<body>
+<header>
+  <h1>LobbyEar · live</h1>
+  <div class="meta" id="meta">disconnected</div>
+</header>
+
+<section id="starter" class="card">
+  <div class="start-form">
+    <label>Client profile (path on server)</label>
+    <input id="f-client" value="clients/example_acme_tobacco.yaml" />
+    <label>Video source — pick one</label>
+    <input id="f-url" placeholder="https://www.youtube.com/watch?v=…" />
+    <input id="f-file" placeholder="/abs/path/to/local.mp4" style="margin-top:6px" />
+    <input id="f-videoid" placeholder="existing VideoDB video id" style="margin-top:6px" />
+    <button id="f-start">Start run</button>
+  </div>
+</section>
+
+<section id="status" class="card">
+  <span class="badge" id="b-status">idle</span>
+  <span class="badge" id="b-runid"></span>
+</section>
+
+<section id="stream" class="card">
+  <div class="empty">No events yet. Start a run above, or pass <code>?run=&lt;id&gt;</code> in the URL to attach to an existing one.</div>
+</section>
+
+<script>
+const $ = (sel) => document.querySelector(sel);
+const params = new URLSearchParams(location.search);
+
+const state = {
+  runId: params.get("run") || null,
+  status: "idle",
+  events: [],
+  source: null,
+};
+
+function setStatus(s) {
+  state.status = s;
+  const b = $("#b-status");
+  b.textContent = s;
+  b.className = "badge " + (["running","finished","error"].includes(s) ? s : "");
+  $("#meta").textContent = state.runId ? `run ${state.runId} · ${s}` : s;
+}
+
+function setRunId(id) {
+  state.runId = id;
+  $("#b-runid").textContent = id ? `run ${id}` : "";
+  const url = new URL(location);
+  if (id) url.searchParams.set("run", id); else url.searchParams.delete("run");
+  history.replaceState(null, "", url);
+}
+
+function appendRaw(event) {
+  state.events.push(event);
+  const root = $("#stream");
+  if (root.querySelector(".empty")) root.innerHTML = "";
+  const line = document.createElement("div");
+  line.style.fontFamily = "ui-monospace, monospace";
+  line.style.fontSize = "12px";
+  line.style.color = "#c9d1d9";
+  line.style.padding = "2px 0";
+  line.textContent = `${event.kind || "?"} · ${event.name || "?"} · ${
+    JSON.stringify(event.payload || {}).slice(0, 240)
+  }`;
+  root.appendChild(line);
+  root.scrollTop = root.scrollHeight;
+}
+
+function attach(runId) {
+  if (state.source) state.source.close();
+  setRunId(runId);
+  setStatus("running");
+  const src = new EventSource(`/runs/${runId}/events`);
+  state.source = src;
+  src.addEventListener("message", (e) => {
+    try { appendRaw(JSON.parse(e.data)); } catch {}
+  });
+  src.addEventListener("done", (e) => {
+    let payload = {}; try { payload = JSON.parse(e.data || "{}"); } catch {}
+    setStatus(payload.status || "finished");
+    src.close();
+  });
+  src.addEventListener("ping", () => {});
+  src.onerror = () => { setStatus("error"); src.close(); };
+}
+
+$("#f-start").addEventListener("click", async () => {
+  const body = {
+    client: $("#f-client").value.trim(),
+    url: $("#f-url").value.trim() || null,
+    file: $("#f-file").value.trim() || null,
+    video_id: $("#f-videoid").value.trim() || null,
+  };
+  if (!body.url && !body.file && !body.video_id) {
+    alert("Provide url, file, or video_id");
+    return;
+  }
+  $("#f-start").disabled = true;
+  try {
+    const r = await fetch("/runs", {
+      method: "POST",
+      headers: {"content-type": "application/json"},
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+    const j = await r.json();
+    attach(j.run_id);
+  } catch (e) {
+    alert("Start failed: " + e.message);
+  } finally {
+    $("#f-start").disabled = false;
+  }
+});
+
+if (state.runId) attach(state.runId);
+else setStatus("idle");
+</script>
+</body>
+</html>
