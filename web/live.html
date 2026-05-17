@@ -79,6 +79,18 @@
   .pill.sev-medium { color: #f0b429; border-color: #f0b42944; }
   .pill.sev-low    { color: #7ee787; border-color: #7ee78744; }
   .pill.cat        { color: var(--link); border-color: #79c0ff44; }
+
+  .chiprail { display: flex; gap: 6px; overflow-x: auto; padding: 8px 0;
+    border-top: 1px dashed var(--border); margin-top: 8px; }
+  .chip { flex: 0 0 auto; padding: 4px 10px; border-radius: 999px;
+    font-size: 11px; border: 1px solid var(--border);
+    background: var(--panel-2); color: var(--muted); display: flex;
+    align-items: center; gap: 6px; }
+  .chip.pending { color: var(--warn); border-color: #f0b42944; }
+  .chip.ok      { color: var(--accent); border-color: #7ee78744; }
+  .chip.err     { color: var(--danger); border-color: #ff7b7244; }
+  .chip .arg { color: #c9d1d9; max-width: 220px; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
 </style>
 </head>
 <body>
@@ -102,6 +114,7 @@
 <section id="status" class="card">
   <span class="badge" id="b-status">idle</span>
   <span class="badge" id="b-runid"></span>
+  <div class="chiprail" id="chiprail"></div>
 </section>
 
 <section class="layout">
@@ -207,6 +220,39 @@ function fmtTime(s) {
 // the matching tool_result for record_mention lands, we can paint the card
 // using the input the agent sent (which is the mention itself).
 const pendingToolInputs = {};   // turn-name → input
+const toolChips = {};           // turn-name → chip DOM node
+
+function summariseToolInput(name, input) {
+  if (!input) return "";
+  if (name === "search_scenes" || name === "search_spoken") return input.query || "";
+  if (name === "compile_clip") return `${(input.shot_ids || []).length} shots`;
+  if (name === "record_mention") return input.topic || "";
+  if (name === "get_transcript_window") return `${input.start_s}–${input.end_s}s`;
+  if (name === "finalize_briefing") return "finalize";
+  return JSON.stringify(input).slice(0, 60);
+}
+
+function addChip(event) {
+  const t = (event.payload || {}).turn;
+  const key = `${t}:${event.name}`;
+  const rail = $("#chiprail");
+  const chip = document.createElement("div");
+  chip.className = "chip pending";
+  chip.innerHTML = `<span>${event.name}</span><span class="arg">${
+    summariseToolInput(event.name, (event.payload || {}).input)
+  }</span>`;
+  rail.appendChild(chip);
+  toolChips[key] = chip;
+  rail.scrollLeft = rail.scrollWidth;
+}
+
+function settleChip(event) {
+  const t = (event.payload || {}).turn;
+  const chip = toolChips[`${t}:${event.name}`];
+  if (!chip) return;
+  chip.classList.remove("pending");
+  chip.classList.add(event.payload.is_error ? "err" : "ok");
+}
 
 function rememberToolInput(event) {
   const t = (event.payload || {}).turn;
@@ -251,10 +297,14 @@ function handleEvent(event) {
     appendReasoning(event);
   } else if (event.kind === "tool_use") {
     rememberToolInput(event);
-  } else if (event.kind === "tool_result" && event.name === "record_mention") {
-    const input = takeToolInput(event);
-    const result = (event.payload || {}).result || {};
-    if (!event.payload.is_error && result.recorded) appendMention(input, result);
+    addChip(event);
+  } else if (event.kind === "tool_result") {
+    settleChip(event);
+    if (event.name === "record_mention") {
+      const input = takeToolInput(event);
+      const result = (event.payload || {}).result || {};
+      if (!event.payload.is_error && result.recorded) appendMention(input, result);
+    }
   }
 }
 
