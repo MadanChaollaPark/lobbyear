@@ -1,0 +1,58 @@
+name: ACME Tobacco Europe
+sector: Tobacco & nicotine products
+one_liner: >
+  Heated tobacco and vaping manufacturer headquartered in Brussels.
+  Sells across the EU. Single largest cost driver is excise tax;
+  single largest regulatory risk is flavor bans.
+
+# Watchlist — things the agent should listen for
+interests:
+  - heated tobacco regulation
+  - vape flavor ban
+  - excise tax harmonization
+  - cross-border duty-paid sales
+  - youth nicotine prevention rules
+  - traceability and track-and-trace
+  - reduced-risk product (RRP) labeling
+
+risks:
+  - flavor ban extending to heated tobacco
+  - excise minimum rates increase
+  - plain packaging extension
+  - sponsorship and influencer marketing ban
+  - point-of-sale display restrictions
+
+# Words/phrases that, if uttered, deserve a finding even without
+# a strong topic match. Used as seed queries — agent may invent more.
+mention_triggers:
+  - ACME Tobacco
+  - heated tobacco
+  - IQOS
+  - glo
+  - Velo
+  - JUUL
+  - vape ban
+  - tobacco directive
+  - TPD3
+  - excise directive
+  - nicotine pouch
+
+# People and institutions whose presence matters
+key_actors:
+  - DG SANTE
+  - DG TAXUD
+  - WHO FCTC
+  - European Parliament ENVI committee
+  - Stella Kyriakides
+  - Anna Cavazzini
+
+# Competitors whose mentions are useful as competitive intel
+competitors:
+  - Philip Morris International
+  - British American Tobacco
+  - JTI
+  - Imperial Brands
+
+# How aggressive should the agent be? (low / medium / high)
+# medium = flag clear mentions only. high = include adjacent/ambient signals.
+sensitivity: medium
