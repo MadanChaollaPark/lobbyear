@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>LobbyEar briefing</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel-2: #1c232c;
+    --text: #e6edf3;
+    --muted: #9aa7b3;
+    --accent: #7ee787;
+    --warn: #f0b429;
+    --danger: #ff7b72;
+    --link: #79c0ff;
+    --border: #30363d;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text);
+    font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui; }
+  body { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 28px 0 12px; color: var(--muted);
+       text-transform: uppercase; letter-spacing: 0.06em; }
+  .meta { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 18px; margin-bottom: 14px; }
+  .row { display: flex; flex-wrap: wrap; gap: 12px; }
+  .row > * { flex: 1 1 220px; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 11px; border: 1px solid var(--border); margin-right: 6px;
+    color: var(--muted); background: var(--panel-2); }
+  .pill.sev-high   { color: #ff7b72; border-color: #ff7b7244; }
+  .pill.sev-medium { color: #f0b429; border-color: #f0b42944; }
+  .pill.sev-low    { color: #7ee787; border-color: #7ee78744; }
+  .pill.cat        { color: var(--link); border-color: #79c0ff44; }
+  .quote { border-left: 3px solid var(--accent); padding: 6px 12px;
+    color: #c9d1d9; margin: 10px 0; background: var(--panel-2); border-radius: 4px;
+    font-style: italic; }
+  .why { margin-top: 6px; }
+  .why b { color: var(--accent); font-weight: 600; }
+  a { color: var(--link); }
+  pre { white-space: pre-wrap; word-break: break-word; font-size: 12px;
+    background: var(--panel-2); padding: 8px; border-radius: 6px;
+    border: 1px solid var(--border); color: var(--muted); }
+  .trace { font-size: 12px; color: var(--muted); }
+  .trace .ev { padding: 4px 8px; border-left: 2px solid var(--border);
+    margin: 2px 0; }
+  .trace .ev.tool_use   { border-color: var(--link); }
+  .trace .ev.tool_result{ border-color: var(--accent); }
+  .trace .ev.text       { border-color: var(--warn); color: #d9b87a; }
+  .grid { display: grid; grid-template-columns: 1fr 360px; gap: 18px; }
+  @media (max-width: 880px) { .grid { grid-template-columns: 1fr; } }
+  details summary { cursor: pointer; color: var(--muted); }
+  iframe { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 6px;
+    background: black; }
+  .empty { color: var(--muted); font-style: italic; padding: 8px 0; }
+  .topbar { display: flex; justify-content: space-between; align-items: baseline;
+    border-bottom: 1px solid var(--border); padding-bottom: 14px; margin-bottom: 18px; }
+  .stat { background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; min-width: 120px; }
+  .stat .label { color: var(--muted); font-size: 11px; text-transform: uppercase; }
+  .stat .value { font-size: 18px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div id="root">
+  <p class="empty">Loading briefing…</p>
+</div>
+
+<script>
+const BRIEFING_PATH = "./briefing.json";
+const TRACE_PATH = "./trace.jsonl";
+
+function el(tag, attrs={}, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") node.className = v;
+    else if (k === "html") node.innerHTML = v;
+    else node.setAttribute(k, v);
+  }
+  for (const child of children.flat()) {
+    if (child == null) continue;
+    node.appendChild(typeof child === "string" ? document.createTextNode(child) : child);
+  }
+  return node;
+}
+
+function fmtTime(s) {
+  if (s == null) return "--:--";
+  s = Math.round(Number(s) || 0);
+  const m = Math.floor(s / 60), r = s % 60;
+  return `${String(m).padStart(2,"0")}:${String(r).padStart(2,"0")}`;
+}
+
+function renderMention(m) {
+  const head = el("div", {},
+    el("span", {class: `pill sev-${m.severity}`}, m.severity.toUpperCase()),
+    el("span", {class: "pill cat"}, m.category),
+    el("span", {class: "pill"}, `${fmtTime(m.start_s)}–${fmtTime(m.end_s)}`),
+    m.confidence ? el("span", {class: "pill"}, `conf ${Math.round(m.confidence*100)}%`) : null,
+  );
+  const speaker = m.speaker_guess
+    ? el("div", {class: "meta"}, `Speaker: ${m.speaker_guess}`) : null;
+
+  const clipEls = (m.clip_urls || []).slice(0, 2).map(u =>
+    el("iframe", {src: u, allow: "autoplay; fullscreen"})
+  );
+  const clipsBlock = clipEls.length
+    ? el("div", {}, ...clipEls)
+    : el("div", {class: "empty"}, "(no clip compiled for this mention)");
+
+  return el("div", {class: "card"},
+    head,
+    el("div", {style: "font-size:15px; font-weight:600; margin-top:8px;"}, m.topic),
+    speaker,
+    m.transcript_quote ? el("div", {class: "quote"}, `"${m.transcript_quote}"`) : null,
+    el("div", {class: "why"}, el("b", {}, "Why it matters: "), m.why_it_matters),
+    clipsBlock,
+  );
+}
+
+function renderTraceLine(line) {
+  try {
+    const ev = JSON.parse(line);
+    const kind = ev.kind || "?";
+    const name = ev.name || "?";
+    let detail = "";
+    if (kind === "text") detail = (ev.payload && ev.payload.text) || "";
+    else if (kind === "tool_use") detail = JSON.stringify(ev.payload && ev.payload.input || {});
+    else if (kind === "tool_result") {
+      const r = (ev.payload && ev.payload.result) || {};
+      detail = ev.payload && ev.payload.is_error
+        ? `ERR ${r.error || ""}`
+        : Object.keys(r).join(", ");
+    }
+    return el("div", {class: `ev ${kind}`}, `${kind} · ${name} · ${String(detail).slice(0,180)}`);
+  } catch (e) {
+    return null;
+  }
+}
+
+async function main() {
+  const root = document.getElementById("root");
+  root.innerHTML = "";
+
+  let data;
+  try {
+    data = await fetch(BRIEFING_PATH, {cache: "no-store"}).then(r => r.json());
+  } catch (e) {
+    root.appendChild(el("p", {class: "empty"}, `Could not load ${BRIEFING_PATH}: ${e.message}`));
+    return;
+  }
+
+  const traceText = await fetch(TRACE_PATH, {cache: "no-store"})
+    .then(r => r.ok ? r.text() : "")
+    .catch(() => "");
+
+  const profile = data.profile || {};
+  const mentions = data.mentions || [];
+
+  root.appendChild(el("div", {class: "topbar"},
+    el("div", {},
+      el("h1", {}, `LobbyEar — ${data.client_name || "client"}`),
+      el("div", {class: "meta"},
+        `Video: ${data.video_title || data.video_id} · ${fmtTime(data.video_length_s)} · `,
+        `${mentions.length} mentions · finish: ${data.finish_reason || "(unfinished)"}`)
+    ),
+    el("div", {class: "row"},
+      el("div", {class: "stat"},
+        el("div", {class: "label"}, "Mentions"),
+        el("div", {class: "value"}, String(mentions.length))),
+      el("div", {class: "stat"},
+        el("div", {class: "label"}, "Distinct queries"),
+        el("div", {class: "value"}, String(data.distinct_query_count || 0))),
+      el("div", {class: "stat"},
+        el("div", {class: "label"}, "Elapsed"),
+        el("div", {class: "value"}, `${data.elapsed_s || 0}s`)),
+    )
+  ));
+
+  root.appendChild(el("h2", {}, "Executive summary"));
+  root.appendChild(el("div", {class: "card"},
+    data.executive_summary
+      ? el("div", {}, data.executive_summary)
+      : el("div", {class: "empty"}, "(agent did not finalize a summary)")
+  ));
+
+  if ((data.recommended_actions || []).length) {
+    root.appendChild(el("h2", {}, "Recommended actions"));
+    root.appendChild(el("ul", {class: "card"},
+      ...data.recommended_actions.map(a => el("li", {}, a))
+    ));
+  }
+
+  root.appendChild(el("h2", {}, `Mentions (${mentions.length})`));
+  const grid = el("div", {class: "grid"});
+  const left = el("div", {});
+  if (!mentions.length) left.appendChild(el("div", {class: "empty"}, "No mentions recorded."));
+  for (const m of mentions) left.appendChild(renderMention(m));
+
+  const right = el("div", {},
+    el("div", {class: "card"},
+      el("div", {class: "meta"}, "Client profile"),
+      el("pre", {}, JSON.stringify(profile, null, 2))
+    ),
+    el("details", {class: "card"},
+      el("summary", {}, `Agent trace (${(traceText.match(/\n/g) || []).length} events)`),
+      el("div", {class: "trace"}, ...traceText.split("\n").filter(Boolean).map(renderTraceLine).filter(Boolean))
+    ),
+    el("details", {class: "card"},
+      el("summary", {}, `Search calls (${(data.search_calls || []).length})`),
+      el("pre", {}, JSON.stringify(data.search_calls || [], null, 2))
+    ),
+  );
+  grid.appendChild(left);
+  grid.appendChild(right);
+  root.appendChild(grid);
+
+  if (data.coverage_notes) {
+    root.appendChild(el("h2", {}, "Coverage notes"));
+    root.appendChild(el("div", {class: "card meta"}, data.coverage_notes));
+  }
+}
+
+main();
+</script>
+</body>
+</html>
