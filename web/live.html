@@ -104,6 +104,13 @@
     box-shadow: 0 0 0 2px #7ee78714; }
   .counter .num { font-weight: 600; }
   .counter .check { color: var(--accent); }
+
+  .clip-card { background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px; margin-bottom: 10px;
+    animation: pop-in 0.4s ease-out; }
+  .clip-card iframe { width: 100%; aspect-ratio: 16 / 9; border: 0;
+    border-radius: 4px; background: black; }
+  .clip-card .label { font-size: 11px; color: var(--muted); padding: 4px 2px; }
 </style>
 </head>
 <body>
@@ -147,10 +154,17 @@
     </div>
   </div>
   <div class="col">
-    <h2>Raw trace</h2>
-    <div class="body" id="col-trace">
-      <div class="empty">Every event in stream order.</div>
+    <h2>Evidence clips</h2>
+    <div class="body" id="col-clips">
+      <div class="empty">Clips will embed here as the agent compiles them.</div>
     </div>
+    <details style="border-top: 1px solid var(--border)">
+      <summary style="padding: 8px 14px; color: var(--muted); font-size: 11px;
+                     cursor: pointer;">Raw trace</summary>
+      <div class="body" id="col-trace" style="max-height: 220px">
+        <div class="empty">Every event in stream order.</div>
+      </div>
+    </details>
   </div>
 </section>
 
@@ -304,6 +318,22 @@ function takeToolInput(event) {
   return input || {};
 }
 
+function appendClip(clip) {
+  const root = $("#col-clips");
+  clearEmpty(root);
+  const card = document.createElement("div");
+  card.className = "clip-card";
+  const label = document.createElement("div");
+  label.className = "label";
+  label.textContent = `${clip.shot_id || "shot"} · ${fmtTime(clip.start_s)}–${fmtTime(clip.end_s)}`;
+  const iframe = document.createElement("iframe");
+  iframe.src = clip.player_url || clip.stream_url;
+  iframe.allow = "autoplay; fullscreen";
+  card.appendChild(label);
+  card.appendChild(iframe);
+  root.insertBefore(card, root.firstChild);  // newest on top
+}
+
 function appendMention(input, result) {
   const root = $("#col-mentions");
   clearEmpty(root);
@@ -344,6 +374,11 @@ function handleEvent(event) {
       const input = takeToolInput(event);
       const result = (event.payload || {}).result || {};
       if (!event.payload.is_error && result.recorded) appendMention(input, result);
+    } else if (event.name === "compile_clip" && !event.payload.is_error) {
+      const result = (event.payload || {}).result || {};
+      for (const clip of result.clips || []) {
+        if (clip.player_url || clip.stream_url) appendClip(clip);
+      }
     }
   }
 }
