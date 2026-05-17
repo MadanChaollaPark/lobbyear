@@ -57,6 +57,28 @@
   .reasoning .ts { color: var(--muted); font-size: 10px; }
   .reasoning .text { color: #d9b87a; font-size: 13px; line-height: 1.4;
     margin-top: 3px; white-space: pre-wrap; }
+
+  .mention { background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px 12px; margin-bottom: 10px;
+    animation: pop-in 0.4s ease-out; }
+  @keyframes pop-in {
+    from { transform: translateY(6px); opacity: 0; }
+    to { transform: none; opacity: 1; }
+  }
+  .mention .head { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+  .mention .topic { font-weight: 600; margin-top: 6px; font-size: 14px; }
+  .mention .quote { border-left: 3px solid var(--accent); padding: 6px 10px;
+    margin: 8px 0; font-style: italic; color: #c9d1d9; font-size: 13px;
+    background: var(--panel); border-radius: 4px; }
+  .mention .why { font-size: 12px; color: #d9b87a; }
+  .mention .why b { color: var(--accent); }
+  .pill { display: inline-block; padding: 1px 7px; border-radius: 999px;
+    font-size: 10px; border: 1px solid var(--border); color: var(--muted);
+    background: var(--panel); }
+  .pill.sev-high   { color: #ff7b72; border-color: #ff7b7244; }
+  .pill.sev-medium { color: #f0b429; border-color: #f0b42944; }
+  .pill.sev-low    { color: #7ee787; border-color: #7ee78744; }
+  .pill.cat        { color: var(--link); border-color: #79c0ff44; }
 </style>
 </head>
 <body>
@@ -174,10 +196,66 @@ function appendReasoning(event) {
   root.scrollTop = root.scrollHeight;
 }
 
+function fmtTime(s) {
+  if (s == null) return "--:--";
+  s = Math.round(Number(s) || 0);
+  const m = Math.floor(s / 60), r = s % 60;
+  return `${String(m).padStart(2,"0")}:${String(r).padStart(2,"0")}`;
+}
+
+// Tool_use blocks come in before their tool_result. Cache the input so when
+// the matching tool_result for record_mention lands, we can paint the card
+// using the input the agent sent (which is the mention itself).
+const pendingToolInputs = {};   // turn-name → input
+
+function rememberToolInput(event) {
+  const t = (event.payload || {}).turn;
+  if (event.name && t != null) pendingToolInputs[`${t}:${event.name}`] = event.payload.input || {};
+}
+
+function takeToolInput(event) {
+  const t = (event.payload || {}).turn;
+  const key = `${t}:${event.name}`;
+  const input = pendingToolInputs[key];
+  delete pendingToolInputs[key];
+  return input || {};
+}
+
+function appendMention(input, result) {
+  const root = $("#col-mentions");
+  clearEmpty(root);
+  const card = document.createElement("div");
+  card.className = "mention";
+  card.innerHTML = `
+    <div class="head">
+      <span class="pill sev-${input.severity || "medium"}">${(input.severity || "?").toUpperCase()}</span>
+      <span class="pill cat">${input.category || "?"}</span>
+      <span class="pill">${fmtTime(input.start_s)}–${fmtTime(input.end_s)}</span>
+      ${input.speaker_guess ? `<span class="pill">${input.speaker_guess}</span>` : ""}
+    </div>
+    <div class="topic"></div>
+    <div class="quote"></div>
+    <div class="why"><b>Why it matters: </b><span></span></div>
+  `;
+  card.querySelector(".topic").textContent = input.topic || "(no topic)";
+  card.querySelector(".quote").textContent = `“${input.transcript_quote || ""}”`;
+  card.querySelector(".why span").textContent = input.why_it_matters || "";
+  root.appendChild(card);
+  root.scrollTop = root.scrollHeight;
+}
+
 function handleEvent(event) {
   state.events.push(event);
   appendTrace(event);
-  if (event.kind === "text") appendReasoning(event);
+  if (event.kind === "text") {
+    appendReasoning(event);
+  } else if (event.kind === "tool_use") {
+    rememberToolInput(event);
+  } else if (event.kind === "tool_result" && event.name === "record_mention") {
+    const input = takeToolInput(event);
+    const result = (event.payload || {}).result || {};
+    if (!event.payload.is_error && result.recorded) appendMention(input, result);
+  }
 }
 
 function attach(runId) {
