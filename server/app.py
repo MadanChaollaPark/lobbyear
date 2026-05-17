@@ -21,9 +21,11 @@ from fastapi.staticfiles import StaticFiles
 
 
 from .runs import router as runs_router
+from .sse import router as sse_router
 
 app = FastAPI(title="LobbyEar", version="0.1.0")
 app.include_router(runs_router)
+app.include_router(sse_router)
 
 # Permissive CORS — this is a local demo server; lock down for prod.
 app.add_middleware(
