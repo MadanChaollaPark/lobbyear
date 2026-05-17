@@ -6,15 +6,13 @@ client should care about — competitor mentions, regulatory signals, key actors
 risks. It then **explains why each mention matters**, in its own words, with a
 playable evidence clip.
 
-This is the 5th project in `hackathon/`. Unlike the earlier ones, the pipeline
-is genuinely agentic: a Claude tool-use loop decides which searches to run,
-when to compile evidence, and when the brief is good enough to ship. Same
-input twice → different (but defensible) output.
-
 ## What's actually agentic about this
 
 A non-agentic version would be: "run the user's keyword once → return hits".
-LobbyEar instead:
+LobbyEar runns a loop with "Plan lookout" then has tools the loop can use to verify if the event is worth reporting back to the client.
+This practically substitues all Intern, and junior level lobbyists.
+
+LobbyEar detail:
 
 1. **Plans** 4–8 search angles from the client profile (interests, risks,
    competitors, key actors).
