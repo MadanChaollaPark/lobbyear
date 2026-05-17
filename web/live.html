@@ -41,6 +41,22 @@
     border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 10px; }
   .start-form button:disabled { opacity: 0.4; cursor: not-allowed; }
   .empty { color: var(--muted); font-style: italic; }
+
+  .layout { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 12px;
+    margin-top: 12px; min-height: 60vh; }
+  .layout .col { background: var(--panel); border: 1px solid var(--border);
+    border-radius: 8px; display: flex; flex-direction: column; min-height: 0; }
+  .layout .col h2 { font-size: 11px; text-transform: uppercase;
+    letter-spacing: 0.06em; color: var(--muted);
+    margin: 0; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .layout .col .body { padding: 10px 14px; overflow-y: auto; flex: 1; }
+  @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } }
+
+  .reasoning .entry { padding: 8px 0; border-bottom: 1px dashed var(--border); }
+  .reasoning .entry:last-child { border-bottom: 0; }
+  .reasoning .ts { color: var(--muted); font-size: 10px; }
+  .reasoning .text { color: #d9b87a; font-size: 13px; line-height: 1.4;
+    margin-top: 3px; white-space: pre-wrap; }
 </style>
 </head>
 <body>
@@ -66,8 +82,25 @@
   <span class="badge" id="b-runid"></span>
 </section>
 
-<section id="stream" class="card">
-  <div class="empty">No events yet. Start a run above, or pass <code>?run=&lt;id&gt;</code> in the URL to attach to an existing one.</div>
+<section class="layout">
+  <div class="col reasoning">
+    <h2>Reasoning</h2>
+    <div class="body" id="col-reasoning">
+      <div class="empty">Agent text blocks will land here as Claude thinks.</div>
+    </div>
+  </div>
+  <div class="col">
+    <h2>Mentions</h2>
+    <div class="body" id="col-mentions">
+      <div class="empty">Mentions will materialize as the agent records them.</div>
+    </div>
+  </div>
+  <div class="col">
+    <h2>Raw trace</h2>
+    <div class="body" id="col-trace">
+      <div class="empty">Every event in stream order.</div>
+    </div>
+  </div>
 </section>
 
 <script>
@@ -97,20 +130,54 @@ function setRunId(id) {
   history.replaceState(null, "", url);
 }
 
-function appendRaw(event) {
-  state.events.push(event);
-  const root = $("#stream");
-  if (root.querySelector(".empty")) root.innerHTML = "";
+function nowTime() {
+  const d = new Date();
+  return d.toTimeString().slice(0, 8);
+}
+
+function clearEmpty(root) {
+  const e = root.querySelector(".empty");
+  if (e) e.remove();
+}
+
+function appendTrace(event) {
+  const root = $("#col-trace");
+  clearEmpty(root);
   const line = document.createElement("div");
   line.style.fontFamily = "ui-monospace, monospace";
-  line.style.fontSize = "12px";
+  line.style.fontSize = "11px";
   line.style.color = "#c9d1d9";
   line.style.padding = "2px 0";
   line.textContent = `${event.kind || "?"} · ${event.name || "?"} · ${
-    JSON.stringify(event.payload || {}).slice(0, 240)
+    JSON.stringify(event.payload || {}).slice(0, 200)
   }`;
   root.appendChild(line);
   root.scrollTop = root.scrollHeight;
+}
+
+function appendReasoning(event) {
+  const text = ((event.payload || {}).text || "").trim();
+  if (!text) return;
+  const root = $("#col-reasoning");
+  clearEmpty(root);
+  const entry = document.createElement("div");
+  entry.className = "entry";
+  const ts = document.createElement("div");
+  ts.className = "ts";
+  ts.textContent = nowTime();
+  const body = document.createElement("div");
+  body.className = "text";
+  body.textContent = text;
+  entry.appendChild(ts);
+  entry.appendChild(body);
+  root.appendChild(entry);
+  root.scrollTop = root.scrollHeight;
+}
+
+function handleEvent(event) {
+  state.events.push(event);
+  appendTrace(event);
+  if (event.kind === "text") appendReasoning(event);
 }
 
 function attach(runId) {
@@ -120,7 +187,7 @@ function attach(runId) {
   const src = new EventSource(`/runs/${runId}/events`);
   state.source = src;
   src.addEventListener("message", (e) => {
-    try { appendRaw(JSON.parse(e.data)); } catch {}
+    try { handleEvent(JSON.parse(e.data)); } catch {}
   });
   src.addEventListener("done", (e) => {
     let payload = {}; try { payload = JSON.parse(e.data || "{}"); } catch {}
