@@ -1,0 +1,4 @@
+anthropic>=0.40.0
+python-dotenv>=1.0.1
+PyYAML>=6.0.2
+videodb @ git+https://github.com/Video-DB/videodb-python.git@hackathon

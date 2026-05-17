@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+artifacts/*.json
+artifacts/*.html
+!artifacts/.gitkeep
+node_modules/
