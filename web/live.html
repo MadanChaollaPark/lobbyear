@@ -95,6 +95,15 @@
     margin-right: 4px; background: var(--border); }
   .dot.scene  { background: #79c0ff; }
   .dot.spoken { background: #f0b429; }
+
+  .counter { display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px; font-size: 11px;
+    background: var(--panel-2); border: 1px solid var(--border);
+    color: var(--muted); margin-left: 6px; }
+  .counter.met { color: var(--accent); border-color: #7ee78744;
+    box-shadow: 0 0 0 2px #7ee78714; }
+  .counter .num { font-weight: 600; }
+  .counter .check { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -118,6 +127,9 @@
 <section id="status" class="card">
   <span class="badge" id="b-status">idle</span>
   <span class="badge" id="b-runid"></span>
+  <span class="counter" id="qcounter" title="Distinct model-generated search queries">
+    distinct queries <span class="num">0</span>/3 <span class="check" style="display:none">✓</span>
+  </span>
   <div class="chiprail" id="chiprail"></div>
 </section>
 
@@ -225,6 +237,18 @@ function fmtTime(s) {
 // using the input the agent sent (which is the mention itself).
 const pendingToolInputs = {};   // turn-name → input
 const toolChips = {};           // turn-name → chip DOM node
+const distinctQueries = new Set();
+
+function bumpQueryCounter(query) {
+  if (!query) return;
+  distinctQueries.add(query.trim().toLowerCase());
+  const c = $("#qcounter");
+  c.querySelector(".num").textContent = String(distinctQueries.size);
+  if (distinctQueries.size >= 3) {
+    c.classList.add("met");
+    c.querySelector(".check").style.display = "inline";
+  }
+}
 
 function summariseToolInput(name, input) {
   if (!input) return "";
@@ -311,6 +335,9 @@ function handleEvent(event) {
   } else if (event.kind === "tool_use") {
     rememberToolInput(event);
     addChip(event);
+    if (event.name === "search_scenes" || event.name === "search_spoken") {
+      bumpQueryCounter(((event.payload || {}).input || {}).query);
+    }
   } else if (event.kind === "tool_result") {
     settleChip(event);
     if (event.name === "record_mention") {
