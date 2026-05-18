@@ -21,6 +21,7 @@ from pydantic import BaseModel, Field
 from lobbyear.agent import run_lobby_agent_async, trace_to_dicts
 from lobbyear.briefing import Briefing
 from lobbyear.profile import load_profile
+from lobbyear.source_discovery import discover_sources
 from lobbyear.run import (
     _connect_videodb,
     _fetch_transcript,
@@ -58,6 +59,13 @@ class StartRunResponse(BaseModel):
     run_id: str
     events_url: str
     briefing_url: str
+
+
+class DiscoverSourcesRequest(BaseModel):
+    client: str = Field(..., description="Path to a client profile YAML.")
+    query: str = ""
+    institutions: list[str] = Field(default_factory=list)
+    limit: int = 12
 
 
 async def _execute_run(run: Run, req: StartRunRequest) -> None:
@@ -172,6 +180,19 @@ async def start_run(req: StartRunRequest) -> StartRunResponse:
         events_url=f"/runs/{run.id}/events",
         briefing_url=f"/runs/{run.id}",
     )
+
+
+@router.post("/sources/discover")
+async def discover_related_sources(req: DiscoverSourcesRequest) -> dict[str, Any]:
+    profile = load_profile(req.client)
+    candidates = await asyncio.to_thread(
+        discover_sources,
+        profile=profile,
+        query=req.query,
+        institutions=req.institutions,
+        limit=req.limit,
+    )
+    return {"candidates": candidates}
 
 
 @router.get("/runs")
