@@ -76,9 +76,23 @@ class LobbySession:
         }
         if index_type == "scene":
             kwargs["index_id"] = idx_id
-        result = self.video.search(query, **kwargs)
-
         search_id = f"s{len(self.search_calls) + 1:02d}-{index_type}"
+        call = {
+            "id": search_id,
+            "query": query,
+            "k": safe_k,
+            "index": index_type,
+            "shot_count": 0,
+            "shots": [],
+        }
+
+        try:
+            result = self.video.search(query, **kwargs)
+        except Exception as exc:  # noqa: BLE001 - no-result searches still count as attempts
+            call["error"] = str(exc)
+            self.search_calls.append(call)
+            return call
+
         shots = []
         for i, shot in enumerate(result.get_shots(), start=1):
             shot_id = f"{search_id}-{i}"
@@ -99,14 +113,8 @@ class LobbySession:
             self.shot_records[shot_id] = record
             shots.append(record)
 
-        call = {
-            "id": search_id,
-            "query": query,
-            "k": safe_k,
-            "index": index_type,
-            "shot_count": len(shots),
-            "shots": shots,
-        }
+        call["shot_count"] = len(shots)
+        call["shots"] = shots
         self.search_calls.append(call)
         return call
 

@@ -20,7 +20,8 @@ from pydantic import BaseModel, Field
 
 from lobbyear.agent import run_lobby_agent_async, trace_to_dicts
 from lobbyear.briefing import Briefing
-from lobbyear.profile import load_profile
+from lobbyear.profile import ClientProfile, load_profile, profile_from_mapping
+from lobbyear.profile_resolver import profile_response, resolve_profile_input
 from lobbyear.source_discovery import discover_sources
 from lobbyear.run import (
     _connect_videodb,
@@ -40,7 +41,8 @@ router = APIRouter()
 
 
 class StartRunRequest(BaseModel):
-    client: str = Field(..., description="Path to a client profile YAML.")
+    client: str | None = Field(default=None, description="Path to a client profile YAML.")
+    profile: dict[str, Any] | None = None
     url: str | None = None
     file: str | None = None
     video_id: str | None = Field(default=None, alias="videoId")
@@ -62,10 +64,27 @@ class StartRunResponse(BaseModel):
 
 
 class DiscoverSourcesRequest(BaseModel):
-    client: str = Field(..., description="Path to a client profile YAML.")
+    client: str | None = Field(default=None, description="Path to a client profile YAML.")
+    profile: dict[str, Any] | None = None
     query: str = ""
     institutions: list[str] = Field(default_factory=list)
     limit: int = 12
+
+
+class ResolveProfileRequest(BaseModel):
+    mode: str = "yaml_path"
+    path: str | None = None
+    profile: dict[str, Any] | None = None
+    text: str | None = None
+
+
+def _profile_from_request(*, client: str | None, profile: dict[str, Any] | None) -> ClientProfile:
+    if profile is not None:
+        profile_data = profile.get("profile") if isinstance(profile.get("profile"), dict) else profile
+        return profile_from_mapping(profile_data)
+    if client:
+        return load_profile(client)
+    raise ValueError("Provide a client profile path or inline profile object")
 
 
 async def _execute_run(run: Run, req: StartRunRequest) -> None:
@@ -77,17 +96,23 @@ async def _execute_run(run: Run, req: StartRunRequest) -> None:
         if not os.getenv("ANTHROPIC_API_KEY"):
             raise RuntimeError("ANTHROPIC_API_KEY not set on the server")
 
-        profile = load_profile(req.client)
+        profile = await asyncio.to_thread(
+            _profile_from_request, client=req.client, profile=req.profile
+        )
         run.push({"kind": "status", "name": "profile_loaded",
                   "payload": {"client": profile.name}})
 
-        conn = _connect_videodb()
-        coll = conn.get_collection()
+        conn = await asyncio.to_thread(_connect_videodb)
+        coll = await asyncio.to_thread(conn.get_collection)
         if req.video_id:
-            video = _resolve_video_from_id(coll, req.video_id)
+            video = await asyncio.to_thread(_resolve_video_from_id, coll, req.video_id)
         else:
-            video = _resolve_video_from_url_or_file(
-                coll, url=req.url, file=req.file, name=req.name
+            video = await asyncio.to_thread(
+                _resolve_video_from_url_or_file,
+                coll,
+                url=req.url,
+                file=req.file,
+                name=req.name,
             )
         video_id = str(getattr(video, "id", "unknown"))
         video_title = getattr(video, "name", None) or getattr(video, "title", None)
@@ -97,7 +122,8 @@ async def _execute_run(run: Run, req: StartRunRequest) -> None:
                               "length_s": video_length_s}})
 
         run.push({"kind": "status", "name": "indexing_scenes", "payload": {}})
-        scene_index_id, scene_records = _index_video(
+        scene_index_id, scene_records = await asyncio.to_thread(
+            _index_video,
             video,
             scene_seconds=req.scene_seconds,
             scene_timeout_s=req.scene_timeout,
@@ -107,8 +133,12 @@ async def _execute_run(run: Run, req: StartRunRequest) -> None:
                   "payload": {"count": len(scene_records)}})
 
         run.push({"kind": "status", "name": "indexing_spoken", "payload": {}})
-        spoken_marker = _index_spoken(video, language_code=req.language_code)
-        transcript_segments = _fetch_transcript(video) if spoken_marker else []
+        spoken_marker = await asyncio.to_thread(
+            _index_spoken, video, language_code=req.language_code
+        )
+        transcript_segments = (
+            await asyncio.to_thread(_fetch_transcript, video) if spoken_marker else []
+        )
         run.push({"kind": "status", "name": "spoken_indexed",
                   "payload": {"segments": len(transcript_segments)}})
 
@@ -173,6 +203,8 @@ async def _execute_run(run: Run, req: StartRunRequest) -> None:
 async def start_run(req: StartRunRequest) -> StartRunResponse:
     if not (req.url or req.file or req.video_id):
         raise HTTPException(400, "Provide one of url, file, or video_id")
+    if not (req.client or req.profile):
+        raise HTTPException(400, "Provide a client profile path or inline profile object")
     run = REGISTRY.create()
     asyncio.create_task(_execute_run(run, req))
     return StartRunResponse(
@@ -184,7 +216,10 @@ async def start_run(req: StartRunRequest) -> StartRunResponse:
 
 @router.post("/sources/discover")
 async def discover_related_sources(req: DiscoverSourcesRequest) -> dict[str, Any]:
-    profile = load_profile(req.client)
+    try:
+        profile = _profile_from_request(client=req.client, profile=req.profile)
+    except (OSError, ValueError) as exc:
+        raise HTTPException(400, str(exc)) from exc
     candidates = await asyncio.to_thread(
         discover_sources,
         profile=profile,
@@ -193,6 +228,21 @@ async def discover_related_sources(req: DiscoverSourcesRequest) -> dict[str, Any
         limit=req.limit,
     )
     return {"candidates": candidates}
+
+
+@router.post("/profiles/resolve")
+async def resolve_profile(req: ResolveProfileRequest) -> dict[str, Any]:
+    try:
+        profile, warnings = await asyncio.to_thread(
+            resolve_profile_input,
+            mode=req.mode,
+            path=req.path,
+            profile=req.profile,
+            text=req.text,
+        )
+    except (OSError, ValueError) as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return profile_response(profile, warnings)
 
 
 @router.get("/runs")

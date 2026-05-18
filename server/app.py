@@ -14,14 +14,18 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import Response
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 
 from .runs import router as runs_router
 from .sse import router as sse_router
+
+load_dotenv(_REPO_ROOT / ".env", override=True)
 
 app = FastAPI(title="LobbyEar", version="0.1.0")
 app.include_router(runs_router)
@@ -42,6 +46,11 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/favicon.ico", include_in_schema=False)
+def favicon() -> Response:
+    return Response(status_code=204)
+
+
 # Serve the static viewer at /viewer.html and the artifacts dir at /artifacts/.
 _WEB_DIR = _REPO_ROOT / "web"
 _ARTIFACTS_DIR = _REPO_ROOT / "artifacts"
@@ -51,7 +60,7 @@ if _ARTIFACTS_DIR.exists():
     app.mount("/artifacts", StaticFiles(directory=str(_ARTIFACTS_DIR)), name="artifacts")
 
 
-@app.get("/")
+@app.get("/", response_model=None)
 def root() -> FileResponse | dict[str, str]:
     live = _WEB_DIR / "live.html"
     if live.exists():

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import inspect
 import json
 import os
@@ -24,7 +25,6 @@ class AgentTool:
             "name": self.name,
             "description": self.description,
             "input_schema": self.input_schema,
-            "cache_control": {"type": "ephemeral"},
         }
 
 
@@ -96,7 +96,7 @@ async def run_tool_loop(
     temperature: float = 0.3,
     emit: EmitHandler | None = None,
 ) -> ToolLoopResult:
-    """Run an Anthropic tool-use loop with prompt caching enabled."""
+    """Run an Anthropic tool-use loop with system prompt caching enabled."""
 
     try:
         from anthropic import Anthropic
@@ -116,7 +116,8 @@ async def run_tool_loop(
     finish_reason = "max_turns"
 
     for turn in range(max_turns):
-        response = client.messages.create(
+        response = await asyncio.to_thread(
+            client.messages.create,
             model=selected_model,
             max_tokens=max_tokens,
             temperature=temperature,
@@ -156,7 +157,11 @@ async def run_tool_loop(
                 is_error = True
             else:
                 try:
-                    result = jsonable(await maybe_await(tool.handler(dict(tool_input))))
+                    if inspect.iscoroutinefunction(tool.handler):
+                        handler_result = await tool.handler(dict(tool_input))
+                    else:
+                        handler_result = await asyncio.to_thread(tool.handler, dict(tool_input))
+                    result = jsonable(await maybe_await(handler_result))
                     is_error = False
                 except Exception as exc:  # noqa: BLE001 - tool errors must return to model
                     result = {"error": str(exc)}
@@ -202,4 +207,3 @@ async def run_tool_loop(
             )
 
     return ToolLoopResult(finished=finished, finish_reason=finish_reason, messages=messages, trace=trace)
-
