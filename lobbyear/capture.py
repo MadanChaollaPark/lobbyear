@@ -66,6 +66,8 @@ async def _run_capture(
         for ch in (mic, display, system_audio):
             if ch is not None:
                 selected.append(ch)
+        if display is not None:
+            display.is_primary = True
 
         if not selected:
             raise RuntimeError(
@@ -75,7 +77,6 @@ async def _run_capture(
         await client.start_session(
             capture_session_id=capture_session_id,
             channels=selected,
-            primary_video_channel_id=getattr(display, "name", None),
         )
 
         async def consume_events() -> None:

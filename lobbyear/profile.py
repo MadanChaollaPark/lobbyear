@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import dataclasses
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -39,7 +41,10 @@ def load_profile(path: str | Path) -> ClientProfile:
     data = yaml.safe_load(Path(path).read_text())
     if not isinstance(data, dict):
         raise ValueError(f"Profile must be a YAML mapping, got {type(data).__name__}")
+    return profile_from_mapping(data)
 
+
+def profile_from_mapping(data: dict[str, Any]) -> ClientProfile:
     def as_str_list(value: object) -> list[str]:
         if value is None:
             return []
@@ -58,3 +63,7 @@ def load_profile(path: str | Path) -> ClientProfile:
         competitors=as_str_list(data.get("competitors")),
         sensitivity=str(data.get("sensitivity", "medium")).strip().lower() or "medium",
     )
+
+
+def profile_to_dict(profile: ClientProfile) -> dict[str, Any]:
+    return dataclasses.asdict(profile)

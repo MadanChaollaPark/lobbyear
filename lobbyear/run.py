@@ -4,6 +4,7 @@ import argparse
 import dataclasses
 import json
 import os
+import re
 import time
 from pathlib import Path
 from typing import Any
@@ -20,6 +21,13 @@ DEFAULT_SCENE_PROMPT = (
     "labels, vote counts — include it verbatim. Identify any speaker by their "
     "on-screen label if shown."
 )
+
+SCENE_EXISTS_RE = re.compile(r"Scene index with id ([^\s]+) already exists")
+
+
+def _existing_scene_index_id(exc: Exception) -> str | None:
+    match = SCENE_EXISTS_RE.search(str(exc))
+    return match.group(1) if match else None
 
 
 def _connect_videodb() -> Any:
@@ -62,12 +70,18 @@ def _index_video(video: Any, scene_seconds: int, scene_timeout_s: int, poll_s: i
     from videodb import SceneExtractionType  # type: ignore
 
     print(f"[index] starting scene index (time_based, every {scene_seconds}s)…")
-    index_id = video.index_scenes(
-        extraction_type=SceneExtractionType.time_based,
-        extraction_config={"time": scene_seconds, "select_frames": ["middle"]},
-        prompt=DEFAULT_SCENE_PROMPT,
-        name="lobbyear-scene-index",
-    )
+    try:
+        index_id = video.index_scenes(
+            extraction_type=SceneExtractionType.time_based,
+            extraction_config={"time": scene_seconds, "select_frames": ["middle"]},
+            prompt=DEFAULT_SCENE_PROMPT,
+            name="lobbyear-scene-index",
+        )
+    except Exception as exc:  # noqa: BLE001 - VideoDB raises plain exceptions here
+        index_id = _existing_scene_index_id(exc)
+        if not index_id:
+            raise
+        print(f"[index] reusing existing scene index {index_id}")
     if not index_id:
         raise RuntimeError("VideoDB did not return a scene index id")
     records = _wait_for_scene_records(video, index_id, timeout_s=scene_timeout_s, poll_s=poll_s)
@@ -83,6 +97,9 @@ def _index_spoken(video: Any, language_code: str | None) -> str | None:
         else:
             video.index_spoken_words()
     except Exception as exc:  # noqa: BLE001
+        if "already exists" in str(exc).lower():
+            print("[index] reusing existing spoken-word index")
+            return "spoken"
         print(f"[index] spoken-word index failed: {exc}")
         return None
     # The hackathon SDK manages a single spoken-word index per video; passing
@@ -127,7 +144,7 @@ def _write_viewer(artifact_dir: Path, briefing_path: Path, trace_path: Path) -> 
 def cmd_analyze(args: argparse.Namespace) -> int:
     from dotenv import load_dotenv
 
-    load_dotenv(Path.cwd() / ".env")
+    load_dotenv(Path.cwd() / ".env", override=True)
     if not os.getenv("ANTHROPIC_API_KEY"):
         raise RuntimeError("ANTHROPIC_API_KEY must be set — see .env.example")
 
@@ -205,7 +222,7 @@ def cmd_analyze(args: argparse.Namespace) -> int:
 def cmd_capture(args: argparse.Namespace) -> int:
     from dotenv import load_dotenv
 
-    load_dotenv(Path.cwd() / ".env")
+    load_dotenv(Path.cwd() / ".env", override=True)
     token = args.token or os.getenv("VIDEODB_CAPTURE_TOKEN")
     if not token:
         raise RuntimeError(

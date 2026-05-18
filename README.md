@@ -34,7 +34,7 @@ in `lobbyear/tools.py`.
 
 | Hackathon requirement | Where in this project |
 | --- | --- |
-| CaptureSession / RTStream | `lobbyear/capture.py` — wraps `videodb.capture.CaptureClient` with mic + screen + system-audio channels, streams events, hands off to analyze mode on `recording-complete` |
+| CaptureSession / live ingest | `lobbyear/capture.py` — wraps `videodb.capture.CaptureClient` with mic + screen + system-audio channels, streams events, hands off to analyze mode on `recording-complete` |
 | Spoken-word index | `_index_spoken` in `lobbyear/run.py` — `video.index_spoken_words()`, optional language hint |
 | Scene index | `_index_video` — `index_scenes` with a custom prompt tuned to surface on-screen text (slides, lower-thirds, vote tallies, name plates) |
 | Multimodal search | Agent tools `search_scenes` + `search_spoken` — agent decides which index per query |
@@ -65,16 +65,17 @@ videodb5/
 
 ```bash
 cd videodb5
-python -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 # then fill in ANTHROPIC_API_KEY + VIDEO_DB_API_KEY
+# add VIDEODB_CAPTURE_TOKEN only if you plan to run live capture
 ```
 
 ## Run on an existing video
 
 ```bash
-python -m lobbyear.run analyze \
+python3 -m lobbyear.run analyze \
   --client clients/example_acme_tobacco.yaml \
   --url "https://www.youtube.com/watch?v=<ID>"
 ```
@@ -82,7 +83,7 @@ python -m lobbyear.run analyze \
 Or against a local file:
 
 ```bash
-python -m lobbyear.run analyze \
+python3 -m lobbyear.run analyze \
   --client clients/example_acme_tobacco.yaml \
   --file ~/Downloads/eu-envi-hearing.mp4
 ```
@@ -129,14 +130,34 @@ Internals:
 - `web/live.html` — single-file UI, no build step. Pass `?run=<id>` to
   reattach to an existing stream after a refresh.
 
-The standalone CLI (`python -m lobbyear.run …`) still works and writes
+### Style variants
+
+`web/styles/v1..v6/index.html` are six fully-styled re-skins of `live.html`,
+each a self-contained file that talks to the same backend on
+`http://localhost:8765`. Launch them all at once:
+
+```bash
+./web/styles/serve_all.sh         # starts python http.server on 3000..3005
+./web/styles/serve_all.sh stop    # kills them
+```
+
+| Port | Variant | Style |
+| --- | --- | --- |
+| 3000 | v1 | Aurora Glass — light, dot-grid, OKLCH soft palette |
+| 3001 | v2 | Spotlight Stars — dark teal, shooting stars, glow |
+| 3002 | v3 | Desktop OS — windowed UI with taskbar |
+| 3003 | v4 | Liquid Flow — Stripe-style animated blob mesh |
+| 3004 | v5 | Cyberpunk Neon — synthwave with scanlines |
+| 3005 | v6 | Sakura Editorial — pink kawaii + brutal toggle |
+
+The standalone CLI (`python3 -m lobbyear.run …`) still works and writes
 the same artifacts under `artifacts/`. Each run also writes a
 `viewer.html` copy alongside its `briefing.json` for static replay.
 
 ## Run live capture
 
 ```bash
-python -m lobbyear.run capture \
+python3 -m lobbyear.run capture \
   --session-id $(uuidgen) \
   --token "$VIDEODB_CAPTURE_TOKEN" \
   --duration 600 \
@@ -173,7 +194,7 @@ it, the project isn't agentic — investigate the trace.
 
 ## Submission checklist
 
-- [x] Uses VideoDB CaptureSession / RTStream
+- [x] Uses VideoDB CaptureSession for live capture
 - [x] Uses VideoDB search across scene + spoken indexes
 - [x] Uses VideoDB compile for evidence clips
 - [x] Agent loop with ≥3 model-generated tool calls per run

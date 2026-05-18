@@ -3,7 +3,6 @@ __pycache__/
 *.pyc
 .venv/
 venv/
-artifacts/*.json
-artifacts/*.html
+artifacts/*
 !artifacts/.gitkeep
 node_modules/

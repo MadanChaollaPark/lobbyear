@@ -14,7 +14,7 @@ from typing import AsyncIterator
 from fastapi import APIRouter, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
-from .registry import REGISTRY, SENTINEL
+from .registry import REGISTRY
 
 
 router = APIRouter()
@@ -25,28 +25,27 @@ async def _event_stream(run_id: str) -> AsyncIterator[dict[str, str]]:
     if run is None:
         return
 
-    # Catch up any client that subscribes after events have already been queued.
-    for event in list(run.events):
-        yield {"event": "message", "data": json.dumps(event, default=str)}
-
-    # Stream live until the sentinel arrives or the run is already terminal.
-    if run.status in ("finished", "error"):
-        yield {"event": "done", "data": json.dumps({"status": run.status,
-                                                    "error": run.error})}
-        return
-
+    # Each client reads from the append-only event log. A single shared queue
+    # would make one browser consume events that other browsers also need.
+    next_event = 0
+    last_heartbeat = asyncio.get_running_loop().time()
     while True:
-        try:
-            ev = await asyncio.wait_for(run.queue.get(), timeout=30.0)
-        except asyncio.TimeoutError:
-            # SSE heartbeat — keeps the connection alive through proxies.
-            yield {"event": "ping", "data": "{}"}
-            continue
-        if ev is SENTINEL:
+        while next_event < len(run.events):
+            event = run.events[next_event]
+            next_event += 1
+            yield {"event": "message", "data": json.dumps(event, default=str)}
+            last_heartbeat = asyncio.get_running_loop().time()
+
+        if run.status in ("finished", "error"):
             yield {"event": "done", "data": json.dumps({"status": run.status,
                                                         "error": run.error})}
             return
-        yield {"event": "message", "data": json.dumps(ev, default=str)}
+
+        await asyncio.sleep(0.25)
+        now = asyncio.get_running_loop().time()
+        if now - last_heartbeat >= 30.0:
+            yield {"event": "ping", "data": "{}"}
+            last_heartbeat = now
 
 
 @router.get("/runs/{run_id}/events")
