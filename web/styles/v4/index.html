@@ -1,0 +1,2229 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>LobbyEar · Liquid Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ================================================
+   LOBBYEAR v4 — LIQUID FLOW
+   Stripe-inspired liquid gradient mesh + glassmorphism
+   ================================================ */
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; font-size: 16px; }
+
+:root {
+  /* Accent palette */
+  --blue-light: #6ec3f4;
+  --blue-vivid: #3a3aff;
+  --pink: #ff61ab;
+  --red: #ff5470;
+  --purple: #8b5cf6;
+  --indigo: #635bff;
+  --neon-green: #4ade80;
+  --neon-amber: #fbbf24;
+  --neon-cyan: #67e8f9;
+
+  --bg-dark: #07070d;
+  --bg-light: #f6f7fb;
+  --text-on-dark: #ffffff;
+  --text-on-light: #14141f;
+
+  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --transition: 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+[data-theme="dark"] {
+  --bg: var(--bg-dark);
+  --bg-section: rgba(255,255,255,0.02);
+  --text: var(--text-on-dark);
+  --text-muted: rgba(255,255,255,0.62);
+  --text-subtle: rgba(255,255,255,0.38);
+  --glass-bg: rgba(255,255,255,0.045);
+  --glass-bg-strong: rgba(255,255,255,0.07);
+  --glass-border: rgba(255,255,255,0.09);
+  --glass-hover-border: rgba(255,255,255,0.2);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.22);
+  --blend-mode: screen;
+  --input-bg: rgba(255,255,255,0.04);
+  --input-border: rgba(255,255,255,0.12);
+  --input-border-focus: rgba(99,91,255,0.55);
+  --scrollbar: rgba(99,91,255,0.32);
+}
+
+[data-theme="light"] {
+  --bg: var(--bg-light);
+  --bg-section: rgba(0,0,0,0.02);
+  --text: var(--text-on-light);
+  --text-muted: rgba(20,20,31,0.62);
+  --text-subtle: rgba(20,20,31,0.38);
+  --glass-bg: rgba(255,255,255,0.55);
+  --glass-bg-strong: rgba(255,255,255,0.75);
+  --glass-border: rgba(20,20,31,0.08);
+  --glass-hover-border: rgba(20,20,31,0.18);
+  --glass-shadow: 0 8px 32px rgba(80,80,140,0.12), 0 2px 8px rgba(80,80,140,0.08);
+  --blend-mode: multiply;
+  --input-bg: rgba(255,255,255,0.75);
+  --input-border: rgba(20,20,31,0.12);
+  --input-border-focus: rgba(99,91,255,0.55);
+  --scrollbar: rgba(99,91,255,0.28);
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-feature-settings: "ss01", "cv11";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.55;
+  min-height: 100%;
+  transition: background var(--transition), color var(--transition);
+}
+
+body {
+  position: relative;
+  overflow-x: hidden;
+  padding: 0;
+}
+
+/* ===== Scrollbars ===== */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--scrollbar); border-radius: 8px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(99,91,255,0.55); }
+
+/* ===== Animated gradient blob mesh background ===== */
+.mesh {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  mix-blend-mode: var(--blend-mode);
+  will-change: transform;
+  opacity: 0.75;
+}
+
+[data-theme="light"] .blob { opacity: 0.55; filter: blur(110px); }
+
+.blob-1 {
+  width: 640px; height: 640px;
+  background: var(--blue-light);
+  top: -12%; left: -8%;
+  animation: blobMove1 22s ease-in-out infinite;
+}
+.blob-2 {
+  width: 540px; height: 540px;
+  background: var(--blue-vivid);
+  top: 18%; right: -12%;
+  animation: blobMove2 26s ease-in-out infinite;
+}
+.blob-3 {
+  width: 600px; height: 600px;
+  background: var(--pink);
+  bottom: -18%; left: 22%;
+  animation: blobMove3 24s ease-in-out infinite;
+}
+.blob-4 {
+  width: 480px; height: 480px;
+  background: var(--purple);
+  top: 42%; left: 52%;
+  animation: blobMove4 20s ease-in-out infinite;
+}
+.blob-5 {
+  width: 420px; height: 420px;
+  background: var(--indigo);
+  top: 64%; right: 18%;
+  animation: blobMove5 28s ease-in-out infinite;
+}
+
+@keyframes blobMove1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(140px, 90px) scale(1.1); }
+  50% { transform: translate(80px, 180px) scale(0.95); }
+  75% { transform: translate(-50px, 110px) scale(1.05); }
+}
+@keyframes blobMove2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-110px, 70px) scale(1.08); }
+  50% { transform: translate(-180px, -50px) scale(0.92); }
+  75% { transform: translate(-70px, -90px) scale(1.04); }
+}
+@keyframes blobMove3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(120px, -120px) scale(1.12); }
+  66% { transform: translate(-90px, -70px) scale(0.9); }
+}
+@keyframes blobMove4 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-90px, -70px) scale(1.06); }
+  50% { transform: translate(50px, -140px) scale(0.94); }
+  75% { transform: translate(110px, 50px) scale(1.1); }
+}
+@keyframes blobMove5 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  30% { transform: translate(-130px, -90px) scale(1.08); }
+  60% { transform: translate(70px, -50px) scale(0.96); }
+}
+
+/* ===== Page chrome ===== */
+.shell {
+  position: relative;
+  z-index: 2;
+  max-width: 1340px;
+  margin: 0 auto;
+  padding: 28px 28px 80px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 36px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.brand-mark {
+  position: relative;
+  width: 44px; height: 44px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--indigo), var(--purple) 50%, var(--pink));
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 24px rgba(99,91,255,0.35), inset 0 0 0 1px rgba(255,255,255,0.18);
+}
+.brand-mark svg { width: 22px; height: 22px; color: #fff; }
+.brand-mark::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 17px;
+  background: linear-gradient(135deg, var(--blue-light), var(--indigo), var(--pink));
+  z-index: -1;
+  opacity: 0.5;
+  filter: blur(10px);
+}
+
+.brand-text { display: flex; flex-direction: column; gap: 2px; }
+.brand-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ffffff, var(--blue-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+[data-theme="light"] .brand-name {
+  background: linear-gradient(135deg, var(--text-on-light), var(--indigo));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.brand-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+}
+
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+
+.meta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 10px;
+  border-radius: 999px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+}
+.meta-badge-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text-subtle);
+  box-shadow: 0 0 0 0 currentColor;
+}
+.meta-badge.live .meta-badge-dot {
+  background: var(--neon-green);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+.meta-badge.err .meta-badge-dot { background: var(--red); }
+.meta-badge.done .meta-badge-dot { background: var(--neon-cyan); }
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(74,222,128,0.7); }
+  50% { box-shadow: 0 0 0 8px rgba(74,222,128,0); }
+}
+
+.theme-toggle {
+  width: 38px; height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: all 0.2s;
+  font-size: 1rem;
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+}
+.theme-toggle:hover {
+  color: var(--text);
+  border-color: var(--glass-hover-border);
+  transform: translateY(-1px);
+}
+
+/* ===== Hero ===== */
+.hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  flex-wrap: wrap;
+  margin-bottom: 32px;
+}
+
+.hero-titlewrap { flex: 1 1 520px; min-width: 0; }
+
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 10px;
+  border-radius: 999px;
+  background: rgba(99,91,255,0.12);
+  border: 1px solid rgba(99,91,255,0.28);
+  color: #c7c2ff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-bottom: 18px;
+  text-transform: uppercase;
+}
+[data-theme="light"] .hero-eyebrow { color: var(--indigo); }
+.hero-eyebrow-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--indigo);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 6vw, 4.4rem);
+  font-weight: 800;
+  line-height: 1.0;
+  letter-spacing: -0.045em;
+  margin: 0 0 14px;
+}
+.hero-title .gradient-text {
+  background: linear-gradient(135deg, #ffffff 0%, #d4d4ff 35%, var(--indigo) 70%, var(--pink) 100%);
+  background-size: 220% 220%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradientShift 9s ease-in-out infinite;
+}
+[data-theme="light"] .hero-title .gradient-text {
+  background: linear-gradient(135deg, var(--text-on-light) 0%, var(--indigo) 60%, var(--pink) 100%);
+  background-size: 220% 220%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.hero-sub {
+  font-size: 1.02rem;
+  color: var(--text-muted);
+  max-width: 580px;
+  line-height: 1.65;
+}
+
+.hero-metrics {
+  display: flex;
+  gap: 22px;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+.metric-pod {
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  min-width: 132px;
+}
+.metric-pod .num {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  display: flex; align-items: baseline; gap: 4px;
+}
+.metric-pod .num .sep { color: var(--text-subtle); font-weight: 600; }
+.metric-pod .label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-subtle);
+  margin-top: 2px;
+}
+
+/* ===== Glass card ===== */
+.glass {
+  position: relative;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 22px;
+  backdrop-filter: blur(24px) saturate(1.45);
+  -webkit-backdrop-filter: blur(24px) saturate(1.45);
+  box-shadow: var(--glass-shadow);
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+}
+.glass::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  border-radius: 22px 22px 0 0;
+  pointer-events: none;
+}
+[data-theme="light"] .glass::before {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
+}
+.glass:hover {
+  border-color: var(--glass-hover-border);
+  box-shadow: var(--glass-shadow), 0 0 60px rgba(99,91,255,0.08);
+}
+
+.card-pad { padding: 24px 26px; }
+.card-pad-lg { padding: 28px 30px; }
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.card-head-left {
+  display: flex; align-items: center; gap: 12px;
+}
+.card-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+.card-sub {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.card-icon-wrap {
+  width: 36px; height: 36px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, rgba(99,91,255,0.22), rgba(139,92,246,0.16));
+  border: 1px solid rgba(99,91,255,0.28);
+  display: grid; place-items: center;
+  color: #cfcaff;
+}
+.card-icon-wrap svg { width: 18px; height: 18px; }
+
+/* ===== Sections layout ===== */
+.section-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+  gap: 22px;
+  margin-bottom: 22px;
+}
+@media (max-width: 980px) {
+  .section-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== Tabs / mode chips ===== */
+.mode-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 6px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--glass-border);
+}
+[data-theme="light"] .mode-tabs {
+  background: rgba(20,20,31,0.04);
+}
+.mode-tabs label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 7px 14px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+.mode-tabs label:hover { color: var(--text); }
+.mode-tabs input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.mode-tabs label:has(input:checked) {
+  background: linear-gradient(135deg, rgba(99,91,255,0.32), rgba(139,92,246,0.24));
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(99,91,255,0.25);
+}
+[data-theme="light"] .mode-tabs label:has(input:checked) {
+  background: linear-gradient(135deg, var(--indigo), var(--purple));
+  color: #fff;
+}
+
+.profile-pane { display: none; }
+.profile-pane.active { display: block; animation: fade-in 0.3s ease; }
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ===== Form controls ===== */
+.field-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  margin: 12px 0 6px;
+}
+
+.input, .textarea, .select {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  color: var(--text);
+  padding: 11px 14px;
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  outline: none;
+}
+.input::placeholder, .textarea::placeholder {
+  color: var(--text-subtle);
+}
+.input:focus, .textarea:focus, .select:focus {
+  border-color: var(--input-border-focus);
+  background: rgba(99,91,255,0.05);
+  box-shadow: 0 0 0 4px rgba(99,91,255,0.12);
+}
+.textarea {
+  min-height: 92px;
+  resize: vertical;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 14px;
+}
+.field-grid .span-2 { grid-column: 1 / -1; }
+@media (max-width: 720px) {
+  .field-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== Inputs row for known source ===== */
+.stacked-inputs > .input + .input { margin-top: 8px; }
+
+/* ===== Institution checkboxes ===== */
+.inst-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.inst-grid label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  font-size: 0.85rem;
+  color: var(--text);
+  transition: all 0.2s;
+}
+.inst-grid label:hover {
+  border-color: rgba(99,91,255,0.45);
+}
+.inst-grid label:has(input:checked) {
+  background: linear-gradient(135deg, rgba(99,91,255,0.18), rgba(139,92,246,0.12));
+  border-color: rgba(99,91,255,0.55);
+  color: var(--text);
+  box-shadow: 0 4px 14px rgba(99,91,255,0.12);
+}
+.inst-grid input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 5px;
+  border: 1.5px solid var(--input-border);
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+.inst-grid input[type="checkbox"]:checked {
+  background: linear-gradient(135deg, var(--indigo), var(--purple));
+  border-color: var(--indigo);
+}
+.inst-grid input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  inset: 2px 0 0 4px;
+  width: 4px; height: 8px;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(45deg);
+}
+@media (max-width: 720px) { .inst-grid { grid-template-columns: 1fr; } }
+
+/* ===== Buttons ===== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 22px;
+  border-radius: 12px;
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s, background 0.2s;
+  text-decoration: none;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--indigo), var(--purple) 55%, var(--pink));
+  background-size: 200% 200%;
+  background-position: 0% 50%;
+  box-shadow: 0 6px 22px rgba(99,91,255,0.32), inset 0 0 0 1px rgba(255,255,255,0.14);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  background-position: 100% 50%;
+  box-shadow: 0 10px 32px rgba(99,91,255,0.45), inset 0 0 0 1px rgba(255,255,255,0.22);
+}
+
+.btn-ghost {
+  background: var(--glass-bg-strong);
+  color: var(--text);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+}
+.btn-ghost:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: var(--glass-hover-border);
+  transform: translateY(-1px);
+}
+[data-theme="light"] .btn-ghost:hover { background: rgba(20,20,31,0.06); }
+
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: 0 6px 22px rgba(99,91,255,0.18) !important; }
+.btn-sm { padding: 8px 14px; font-size: 0.8rem; border-radius: 10px; }
+
+.btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+/* ===== Hints / status text ===== */
+.hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+  margin-top: 10px;
+}
+
+.profile-preview {
+  display: none;
+  margin-top: 12px;
+  max-height: 200px;
+  overflow: auto;
+  white-space: pre-wrap;
+  background: rgba(0,0,0,0.32);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: #cfd6ff;
+  line-height: 1.55;
+}
+.profile-preview.active { display: block; }
+[data-theme="light"] .profile-preview {
+  background: rgba(20,20,31,0.04);
+  color: #2a2a3d;
+}
+
+/* ===== Candidates ===== */
+.candidate-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.candidate {
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+  animation: pop-in 0.4s ease-out;
+}
+.candidate:hover {
+  border-color: rgba(99,91,255,0.45);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 26px rgba(99,91,255,0.12);
+}
+.candidate-title {
+  font-weight: 700;
+  font-size: 0.93rem;
+  letter-spacing: -0.01em;
+}
+.candidate-meta {
+  font-size: 0.74rem;
+  color: var(--text-subtle);
+  margin-top: 4px;
+  font-family: var(--font-mono);
+}
+.candidate-reason {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+  line-height: 1.55;
+}
+.candidate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.candidate-actions .btn { padding: 7px 14px; font-size: 0.78rem; border-radius: 9px; }
+
+.empty {
+  color: var(--text-subtle);
+  font-style: italic;
+  font-size: 0.85rem;
+  padding: 8px 2px;
+}
+
+/* ===== Status section ===== */
+.status-card { padding: 18px 22px; }
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px 5px 10px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--text-muted);
+  font-family: var(--font-display);
+}
+.badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text-subtle);
+}
+.badge.running {
+  background: rgba(251,191,36,0.12);
+  border-color: rgba(251,191,36,0.35);
+  color: #fbbf24;
+}
+.badge.running::before {
+  background: var(--neon-amber);
+  box-shadow: 0 0 8px var(--neon-amber);
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(0.8); }
+}
+.badge.finished {
+  background: rgba(74,222,128,0.12);
+  border-color: rgba(74,222,128,0.35);
+  color: var(--neon-green);
+}
+.badge.finished::before { background: var(--neon-green); box-shadow: 0 0 8px var(--neon-green); }
+.badge.error {
+  background: rgba(255,84,112,0.12);
+  border-color: rgba(255,84,112,0.4);
+  color: var(--red);
+}
+.badge.error::before { background: var(--red); box-shadow: 0 0 8px var(--red); }
+
+.badge.runid {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.badge.runid::before { display: none; }
+
+.counter {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 13px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--text-muted);
+  transition: all 0.3s;
+}
+.counter .num { color: var(--text); font-weight: 700; }
+.counter.met {
+  background: rgba(74,222,128,0.14);
+  border-color: rgba(74,222,128,0.4);
+  color: var(--neon-green);
+  box-shadow: 0 0 0 3px rgba(74,222,128,0.08);
+}
+.counter.met .num { color: var(--neon-green); }
+.counter .check { color: var(--neon-green); font-weight: 700; }
+
+/* ===== Chip rail ===== */
+.chiprail {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px 0 2px;
+  margin-top: 14px;
+  scrollbar-width: thin;
+}
+.chiprail::-webkit-scrollbar { height: 6px; }
+.chip {
+  flex: 0 0 auto;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  transition: all 0.2s;
+  font-family: var(--font-mono);
+}
+.chip:hover {
+  border-color: var(--glass-hover-border);
+}
+.chip.pending {
+  background: rgba(251,191,36,0.1);
+  border-color: rgba(251,191,36,0.35);
+  color: var(--neon-amber);
+}
+.chip.ok {
+  background: rgba(74,222,128,0.1);
+  border-color: rgba(74,222,128,0.35);
+  color: var(--neon-green);
+}
+.chip.err {
+  background: rgba(255,84,112,0.1);
+  border-color: rgba(255,84,112,0.4);
+  color: var(--red);
+}
+.chip .arg {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+.chip.ok .arg, .chip.err .arg { color: var(--text); }
+
+.dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--text-subtle);
+}
+.dot.scene  { background: var(--blue-light); box-shadow: 0 0 6px var(--blue-light); }
+.dot.spoken { background: var(--neon-amber); box-shadow: 0 0 6px var(--neon-amber); }
+
+/* ===== Three column layout ===== */
+.layout {
+  display: grid;
+  grid-template-columns: 1fr 1.35fr 1.05fr;
+  gap: 18px;
+  min-height: 60vh;
+}
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+.col {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-radius: 22px;
+  overflow: hidden;
+}
+.col-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--glass-border);
+  position: relative;
+}
+.col-head h2 {
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.col-head .col-icon {
+  width: 22px; height: 22px;
+  border-radius: 7px;
+  display: grid; place-items: center;
+  background: linear-gradient(135deg, rgba(99,91,255,0.22), rgba(139,92,246,0.18));
+  color: #cfcaff;
+}
+.col-head .col-icon svg { width: 12px; height: 12px; }
+.col-count {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.col-body {
+  flex: 1 1 auto;
+  padding: 14px 18px;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+/* Reasoning column entries */
+.reasoning-entry {
+  position: relative;
+  padding: 10px 0 14px 22px;
+  border-bottom: 1px dashed var(--glass-border);
+}
+.reasoning-entry:last-child { border-bottom: 0; }
+.reasoning-entry::before {
+  content: '';
+  position: absolute;
+  left: 6px; top: 18px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--indigo), var(--purple));
+  box-shadow: 0 0 0 3px rgba(99,91,255,0.18);
+}
+.reasoning-entry::after {
+  content: '';
+  position: absolute;
+  left: 10px; top: 28px; bottom: -2px;
+  width: 1px;
+  background: linear-gradient(to bottom, rgba(99,91,255,0.35), transparent);
+}
+.reasoning-entry:last-child::after { display: none; }
+.reasoning-entry .ts {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-subtle);
+  letter-spacing: 0.04em;
+}
+.reasoning-entry .text {
+  margin-top: 5px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text);
+  white-space: pre-wrap;
+  font-weight: 400;
+}
+
+/* Mentions */
+.mention {
+  position: relative;
+  padding: 14px 16px 14px 16px;
+  border-radius: 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  margin-bottom: 12px;
+  animation: pop-in 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+}
+.mention:hover {
+  border-color: var(--glass-hover-border);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(99,91,255,0.12);
+}
+.mention::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 12px; bottom: 12px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: linear-gradient(180deg, var(--indigo), var(--pink));
+}
+.mention .head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.mention .topic {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: -0.01em;
+  margin-top: 6px;
+}
+.mention .quote {
+  border-left: 3px solid var(--indigo);
+  padding: 8px 12px;
+  margin: 10px 0 10px;
+  font-style: italic;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  background: rgba(99,91,255,0.06);
+  border-radius: 0 10px 10px 0;
+  line-height: 1.55;
+}
+.mention .why {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+.mention .why b {
+  color: #c7c2ff;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+[data-theme="light"] .mention .why b { color: var(--indigo); }
+
+@keyframes pop-in {
+  from { transform: translateY(8px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  color: var(--text-muted);
+  font-family: var(--font-display);
+}
+.pill.sev-high {
+  background: rgba(255,84,112,0.15);
+  color: #ff8194;
+  border-color: rgba(255,84,112,0.45);
+  box-shadow: 0 0 12px rgba(255,84,112,0.16);
+}
+.pill.sev-medium {
+  background: rgba(251,191,36,0.15);
+  color: #fbbf24;
+  border-color: rgba(251,191,36,0.4);
+  box-shadow: 0 0 12px rgba(251,191,36,0.14);
+}
+.pill.sev-low {
+  background: rgba(74,222,128,0.14);
+  color: var(--neon-green);
+  border-color: rgba(74,222,128,0.4);
+  box-shadow: 0 0 12px rgba(74,222,128,0.12);
+}
+.pill.cat {
+  background: rgba(110,195,244,0.13);
+  color: var(--neon-cyan);
+  border-color: rgba(103,232,249,0.36);
+}
+.pill.time {
+  font-family: var(--font-mono);
+  text-transform: none;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+.pill.speaker {
+  background: rgba(139,92,246,0.16);
+  color: #c4b5fd;
+  border-color: rgba(139,92,246,0.4);
+}
+
+/* Clips */
+.clip-card {
+  position: relative;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  margin-bottom: 14px;
+  animation: pop-in 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+.clip-card:first-child {
+  border-color: rgba(99,91,255,0.35);
+  box-shadow: 0 12px 36px rgba(99,91,255,0.16);
+}
+.clip-card .now-playing {
+  position: absolute;
+  left: -4px;
+  top: 14px;
+  bottom: 14px;
+  width: 4px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, var(--indigo), var(--pink));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.clip-card:first-child .now-playing {
+  opacity: 1;
+  animation: glow-bar 2.2s ease-in-out infinite;
+}
+@keyframes glow-bar {
+  0%, 100% { box-shadow: 0 0 8px rgba(99,91,255,0.5); }
+  50% { box-shadow: 0 0 18px rgba(255,97,171,0.6); }
+}
+
+.clip-frame-wrap {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(110,195,244,0.5), rgba(99,91,255,0.5), rgba(255,97,171,0.5));
+}
+.clip-card iframe {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: 11px;
+  background: #000;
+}
+.clip-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+.clip-label .live-dot {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--neon-green);
+  font-weight: 600;
+}
+.clip-label .live-dot::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--neon-green);
+  box-shadow: 0 0 6px var(--neon-green);
+}
+.clip-card:not(:first-child) .live-dot { display: none; }
+
+/* Trace */
+.trace-toggle {
+  border-top: 1px solid var(--glass-border);
+  padding: 12px 20px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.trace-toggle:hover { color: var(--text); }
+.trace-toggle .caret {
+  transition: transform 0.2s;
+  display: inline-block;
+  font-size: 0.6rem;
+}
+details[open] .trace-toggle .caret { transform: rotate(180deg); }
+details > .trace-toggle::-webkit-details-marker { display: none; }
+.trace-body {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 10px 18px 14px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  border-top: 1px dashed var(--glass-border);
+  background: rgba(0,0,0,0.18);
+}
+[data-theme="light"] .trace-body { background: rgba(20,20,31,0.03); }
+.trace-line {
+  padding: 3px 0;
+  border-bottom: 1px dashed rgba(255,255,255,0.04);
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+/* ===== Details summary base style override ===== */
+details.collapsible > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  user-select: none;
+}
+details.collapsible > summary::-webkit-details-marker { display: none; }
+details.collapsible[open] > summary { border-bottom: 1px solid var(--glass-border); }
+details.collapsible .collapsible-body { padding: 18px 22px 22px; }
+
+.summary-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.summary-title-text {
+  font-size: 1.0rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.summary-title-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.summary-caret {
+  width: 28px; height: 28px;
+  border-radius: 9px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--glass-border);
+  display: grid; place-items: center;
+  transition: transform 0.25s, background 0.2s;
+  color: var(--text-muted);
+}
+details.collapsible[open] > summary .summary-caret { transform: rotate(180deg); }
+details.collapsible > summary:hover .summary-caret {
+  background: rgba(99,91,255,0.18);
+  color: var(--text);
+}
+
+/* ===== Footer ===== */
+.foot {
+  text-align: center;
+  margin-top: 48px;
+  font-size: 0.78rem;
+  color: var(--text-subtle);
+  letter-spacing: 0.04em;
+}
+.foot strong {
+  background: linear-gradient(135deg, var(--indigo), var(--pink));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+/* ===== Reduced motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .blob { animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================== ANIMATED BLOB MESH ============================== -->
+<div class="mesh" aria-hidden="true">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="blob blob-4"></div>
+  <div class="blob blob-5"></div>
+</div>
+
+<div class="shell">
+
+<!-- ============================== TOP BAR ============================== -->
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 12a9 9 0 0 1 18 0"/>
+        <path d="M7 12a5 5 0 0 1 10 0"/>
+        <circle cx="12" cy="12" r="1.6" fill="currentColor"/>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <div class="brand-name">LobbyEar</div>
+      <div class="brand-tag">live · liquid flow</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="meta-badge" id="meta">
+      <span class="meta-badge-dot"></span>
+      <span id="meta-text">disconnected</span>
+    </span>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+      <span id="themeIcon">&#9790;</span>
+    </button>
+  </div>
+</div>
+
+<!-- ============================== HERO ============================== -->
+<div class="hero">
+  <div class="hero-titlewrap">
+    <div class="hero-eyebrow">
+      <span class="hero-eyebrow-dot"></span>
+      Agentic EU policy listening
+    </div>
+    <h1 class="hero-title">
+      <span class="gradient-text">LobbyEar</span>
+    </h1>
+    <p class="hero-sub">
+      Claude watches EU institutional video on your behalf, surfaces mentions
+      that touch your client's interests, and compiles evidence clips live as
+      the meeting unfolds.
+    </p>
+  </div>
+  <div class="hero-metrics" id="hero-metrics">
+    <div class="metric-pod">
+      <div class="num" id="m-reasoning">0</div>
+      <div class="label">Reasoning</div>
+    </div>
+    <div class="metric-pod">
+      <div class="num" id="m-mentions">0</div>
+      <div class="label">Mentions</div>
+    </div>
+    <div class="metric-pod">
+      <div class="num" id="m-clips">0</div>
+      <div class="label">Clips</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== PROFILE ============================== -->
+<details class="glass collapsible" id="profile-mode" open style="margin-bottom: 22px;">
+  <summary>
+    <div class="summary-title">
+      <div class="card-icon-wrap" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+      </div>
+      <div>
+        <div class="summary-title-text">Client profile</div>
+        <div class="summary-title-sub">Saved YAML, structured fields, or quick text brief</div>
+      </div>
+    </div>
+    <div class="summary-caret">
+      <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+        <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </summary>
+  <div class="collapsible-body">
+    <div class="mode-tabs" role="tablist">
+      <label><input type="radio" name="profile-input-mode" value="yaml_path" checked /> Saved YAML</label>
+      <label><input type="radio" name="profile-input-mode" value="json" /> Fill profile</label>
+      <label><input type="radio" name="profile-input-mode" value="text" /> Quick text</label>
+    </div>
+
+    <div class="profile-pane active" data-profile-pane="yaml_path">
+      <label class="field-label">Client profile path on server</label>
+      <input id="f-client" class="input" value="clients/example_acme_tobacco.yaml" />
+    </div>
+
+    <div class="profile-pane" data-profile-pane="json">
+      <div class="field-grid">
+        <div>
+          <label class="field-label">Client name</label>
+          <input id="p-name" class="input" value="SolarGrid Europe" />
+        </div>
+        <div>
+          <label class="field-label">Sector</label>
+          <input id="p-sector" class="input" value="Renewable energy and grid storage" />
+        </div>
+        <div class="span-2">
+          <label class="field-label">One-line description</label>
+          <input id="p-one-liner" class="input" value="Renewable energy and battery storage company focused on EU grid flexibility." />
+        </div>
+        <div>
+          <label class="field-label">Interests</label>
+          <textarea id="p-interests" class="textarea">grid permitting
+state aid
+capacity markets</textarea>
+        </div>
+        <div>
+          <label class="field-label">Risks</label>
+          <textarea id="p-risks" class="textarea">permitting delays
+subsidy cuts</textarea>
+        </div>
+        <div>
+          <label class="field-label">Mention triggers</label>
+          <textarea id="p-triggers" class="textarea">SolarGrid
+grid flexibility
+storage</textarea>
+        </div>
+        <div>
+          <label class="field-label">Key actors</label>
+          <textarea id="p-actors" class="textarea">DG ENER
+ITRE committee</textarea>
+        </div>
+        <div>
+          <label class="field-label">Competitors</label>
+          <textarea id="p-competitors" class="textarea" placeholder="One per line"></textarea>
+        </div>
+        <div>
+          <label class="field-label">Sensitivity</label>
+          <select id="p-sensitivity" class="select">
+            <option value="medium" selected>Medium</option>
+            <option value="low">Low</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-pane" data-profile-pane="text">
+      <label class="field-label">Quick client brief</label>
+      <textarea id="f-profile-text" class="textarea" placeholder="Paste a rough client description, interests, risks, key actors, competitors, and escalation concerns."></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="f-resolve-profile">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M2 8h12M9 4l5 4-5 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Preview profile
+      </button>
+    </div>
+    <div class="hint" id="profile-status">Saved YAML profile is selected.</div>
+    <pre class="profile-preview" id="profile-preview"></pre>
+  </div>
+</details>
+
+<!-- ============================== SOURCE SECTION ============================== -->
+<div class="section-grid">
+
+  <!-- Known source -->
+  <details class="glass collapsible" id="known-source-mode" open>
+    <summary>
+      <div class="summary-title">
+        <div class="card-icon-wrap" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+        </div>
+        <div>
+          <div class="summary-title-text">Known video source</div>
+          <div class="summary-title-sub">YouTube URL, local file path, or VideoDB id</div>
+        </div>
+      </div>
+      <div class="summary-caret">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </summary>
+    <div class="collapsible-body">
+      <label class="field-label">Video source — pick one</label>
+      <div class="stacked-inputs">
+        <input id="f-url" class="input" placeholder="https://www.youtube.com/watch?v=…" />
+        <input id="f-file" class="input" placeholder="/abs/path/to/local.mp4" />
+        <input id="f-videoid" class="input" placeholder="existing VideoDB video id" />
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="f-start">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M4 3l9 5-9 5V3z" fill="currentColor"/>
+          </svg>
+          Start run
+        </button>
+      </div>
+    </div>
+  </details>
+
+  <!-- Discover -->
+  <details class="glass collapsible" id="discover-source-mode">
+    <summary>
+      <div class="summary-title">
+        <div class="card-icon-wrap" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7"/>
+            <path d="M21 21l-4.3-4.3"/>
+          </svg>
+        </div>
+        <div>
+          <div class="summary-title-text">Find related videos</div>
+          <div class="summary-title-sub">Discover official EU video sources by topic</div>
+        </div>
+      </div>
+      <div class="summary-caret">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </summary>
+    <div class="collapsible-body">
+      <label class="field-label">Search focus</label>
+      <input id="f-discover-query" class="input" placeholder="optional: committee, policy file, actor, or risk" />
+      <div class="inst-grid">
+        <label><input type="checkbox" class="f-inst" value="parliament" checked /> Parliament</label>
+        <label><input type="checkbox" class="f-inst" value="commission" checked /> Commission</label>
+        <label><input type="checkbox" class="f-inst" value="council" checked /> Council</label>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="f-discover">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="2"/>
+            <path d="M14 14l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Find videos
+        </button>
+      </div>
+      <div class="hint" id="discover-status">Official EU source candidates will appear here.</div>
+      <div class="candidate-list" id="candidate-list"></div>
+    </div>
+  </details>
+
+</div>
+
+<!-- ============================== STATUS BAR ============================== -->
+<div class="glass status-card" id="status" style="margin-bottom: 22px;">
+  <div class="status-row">
+    <span class="badge" id="b-status">idle</span>
+    <span class="badge runid" id="b-runid"></span>
+    <span class="counter" id="qcounter" title="Distinct model-generated search queries">
+      <span>distinct queries</span>
+      <span class="num">0</span>
+      <span>/ 3</span>
+      <span class="check" style="display:none">&#10003;</span>
+    </span>
+  </div>
+  <div class="chiprail" id="chiprail" aria-label="Tool calls"></div>
+</div>
+
+<!-- ============================== THREE COLUMNS ============================== -->
+<div class="layout">
+
+  <!-- Reasoning -->
+  <section class="col glass">
+    <div class="col-head">
+      <h2>
+        <span class="col-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+          </svg>
+        </span>
+        Reasoning
+      </h2>
+      <span class="col-count" id="cnt-reasoning">0</span>
+    </div>
+    <div class="col-body" id="col-reasoning">
+      <div class="empty">Agent text blocks will land here as Claude thinks.</div>
+    </div>
+  </section>
+
+  <!-- Mentions -->
+  <section class="col glass">
+    <div class="col-head">
+      <h2>
+        <span class="col-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5z"/>
+          </svg>
+        </span>
+        Mentions
+      </h2>
+      <span class="col-count" id="cnt-mentions">0</span>
+    </div>
+    <div class="col-body" id="col-mentions">
+      <div class="empty">Mentions will materialize as the agent records them.</div>
+    </div>
+  </section>
+
+  <!-- Clips + trace -->
+  <section class="col glass">
+    <div class="col-head">
+      <h2>
+        <span class="col-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2"/>
+            <path d="M10 9l5 3-5 3V9z" fill="currentColor"/>
+          </svg>
+        </span>
+        Evidence clips
+      </h2>
+      <span class="col-count" id="cnt-clips">0</span>
+    </div>
+    <div class="col-body" id="col-clips">
+      <div class="empty">Clips will embed here as the agent compiles them.</div>
+    </div>
+    <details>
+      <summary class="trace-toggle">
+        <span>Raw trace</span>
+        <span class="caret">&#9662;</span>
+      </summary>
+      <div class="trace-body" id="col-trace">
+        <div class="empty">Every event in stream order.</div>
+      </div>
+    </details>
+  </section>
+
+</div>
+
+<div class="foot">Built with <strong>liquid flow</strong> · LobbyEar live tracker</div>
+
+</div><!-- /shell -->
+
+<!-- ============================== JAVASCRIPT ============================== -->
+<script>
+(function () {
+  'use strict';
+
+  // ===== API base =====
+  const API_BASE = "http://localhost:8765";
+
+  const $ = (sel) => document.querySelector(sel);
+  const params = new URLSearchParams(location.search);
+
+  const state = {
+    runId: params.get("run") || null,
+    status: "idle",
+    events: [],
+    source: null,
+    counts: { reasoning: 0, mentions: 0, clips: 0 },
+  };
+  let cachedProfileKey = "";
+  let cachedProfileResponse = null;
+
+  // ===== Theme =====
+  const htmlEl = document.documentElement;
+  const themeToggle = document.getElementById("themeToggle");
+  const themeIcon = document.getElementById("themeIcon");
+  const savedTheme = localStorage.getItem("lobbyear-v4-theme") || "dark";
+  htmlEl.setAttribute("data-theme", savedTheme);
+  updateThemeIcon(savedTheme);
+  themeToggle.addEventListener("click", () => {
+    const next = htmlEl.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    htmlEl.setAttribute("data-theme", next);
+    localStorage.setItem("lobbyear-v4-theme", next);
+    updateThemeIcon(next);
+  });
+  function updateThemeIcon(theme) {
+    themeIcon.innerHTML = theme === "dark" ? "&#9790;" : "&#9728;";
+  }
+
+  // ===== Status / meta helpers =====
+  function setStatus(s) {
+    state.status = s;
+    const b = $("#b-status");
+    b.textContent = s;
+    b.className = "badge " + (["running","finished","error"].includes(s) ? s : "");
+    const meta = $("#meta");
+    const metaText = $("#meta-text");
+    meta.classList.remove("live", "err", "done");
+    if (s === "running") meta.classList.add("live");
+    else if (s === "error") meta.classList.add("err");
+    else if (s === "finished") meta.classList.add("done");
+    metaText.textContent = state.runId ? `run ${state.runId} · ${s}` : s;
+  }
+
+  function setRunId(id) {
+    state.runId = id;
+    $("#b-runid").textContent = id ? `run ${id}` : "";
+    const url = new URL(location);
+    if (id) url.searchParams.set("run", id); else url.searchParams.delete("run");
+    history.replaceState(null, "", url);
+  }
+
+  function nowTime() {
+    const d = new Date();
+    return d.toTimeString().slice(0, 8);
+  }
+
+  function clearEmpty(root) {
+    const e = root.querySelector(".empty");
+    if (e) e.remove();
+  }
+
+  function bumpCount(kind) {
+    state.counts[kind]++;
+    const el = $(`#cnt-${kind}`);
+    if (el) el.textContent = state.counts[kind];
+    const m = $(`#m-${kind}`);
+    if (m) m.textContent = state.counts[kind];
+  }
+
+  // ===== Trace =====
+  function appendTrace(event) {
+    const root = $("#col-trace");
+    clearEmpty(root);
+    const line = document.createElement("div");
+    line.className = "trace-line";
+    line.textContent = `${event.kind || "?"} · ${event.name || "?"} · ${
+      JSON.stringify(event.payload || {}).slice(0, 200)
+    }`;
+    root.appendChild(line);
+    root.scrollTop = root.scrollHeight;
+  }
+
+  // ===== Reasoning =====
+  function appendReasoning(event) {
+    const text = ((event.payload || {}).text || "").trim();
+    if (!text) return;
+    const root = $("#col-reasoning");
+    clearEmpty(root);
+    const entry = document.createElement("div");
+    entry.className = "reasoning-entry";
+    const ts = document.createElement("div");
+    ts.className = "ts";
+    ts.textContent = nowTime();
+    const body = document.createElement("div");
+    body.className = "text";
+    body.textContent = text;
+    entry.appendChild(ts);
+    entry.appendChild(body);
+    root.appendChild(entry);
+    root.scrollTop = root.scrollHeight;
+    bumpCount("reasoning");
+  }
+
+  // ===== Tool chips =====
+  function fmtTime(s) {
+    if (s == null) return "--:--";
+    s = Math.round(Number(s) || 0);
+    const m = Math.floor(s / 60), r = s % 60;
+    return `${String(m).padStart(2,"0")}:${String(r).padStart(2,"0")}`;
+  }
+
+  const pendingToolInputs = {};
+  const toolChips = {};
+  const distinctQueries = new Set();
+
+  function bumpQueryCounter(query) {
+    if (!query) return;
+    distinctQueries.add(query.trim().toLowerCase());
+    const c = $("#qcounter");
+    c.querySelector(".num").textContent = String(distinctQueries.size);
+    if (distinctQueries.size >= 3) {
+      c.classList.add("met");
+      c.querySelector(".check").style.display = "inline";
+    }
+  }
+
+  function summariseToolInput(name, input) {
+    if (!input) return "";
+    if (name === "search_scenes" || name === "search_spoken") return input.query || "";
+    if (name === "compile_clip") return `${(input.shot_ids || []).length} shots`;
+    if (name === "record_mention") return input.topic || "";
+    if (name === "get_transcript_window") return `${input.start_s}–${input.end_s}s`;
+    if (name === "finalize_briefing") return "finalize";
+    return JSON.stringify(input).slice(0, 60);
+  }
+
+  function indexDotClass(name) {
+    if (name === "search_scenes") return "scene";
+    if (name === "search_spoken") return "spoken";
+    return "";
+  }
+
+  function addChip(event) {
+    const t = (event.payload || {}).turn;
+    const key = `${t}:${event.name}`;
+    const rail = $("#chiprail");
+    const chip = document.createElement("div");
+    chip.className = "chip pending";
+    const dot = indexDotClass(event.name);
+    chip.innerHTML = `${dot ? `<span class="dot ${dot}"></span>` : ""}<span>${
+      event.name
+    }</span><span class="arg">${
+      summariseToolInput(event.name, (event.payload || {}).input)
+    }</span>`;
+    rail.appendChild(chip);
+    toolChips[key] = chip;
+    rail.scrollLeft = rail.scrollWidth;
+  }
+
+  function settleChip(event) {
+    const t = (event.payload || {}).turn;
+    const chip = toolChips[`${t}:${event.name}`];
+    if (!chip) return;
+    chip.classList.remove("pending");
+    chip.classList.add(event.payload.is_error ? "err" : "ok");
+  }
+
+  function rememberToolInput(event) {
+    const t = (event.payload || {}).turn;
+    if (event.name && t != null) pendingToolInputs[`${t}:${event.name}`] = event.payload.input || {};
+  }
+
+  function takeToolInput(event) {
+    const t = (event.payload || {}).turn;
+    const key = `${t}:${event.name}`;
+    const input = pendingToolInputs[key];
+    delete pendingToolInputs[key];
+    return input || {};
+  }
+
+  // ===== Clips =====
+  function appendClip(clip) {
+    const root = $("#col-clips");
+    clearEmpty(root);
+    // Remove "now playing" status from previous first child
+    const card = document.createElement("div");
+    card.className = "clip-card";
+    const bar = document.createElement("div");
+    bar.className = "now-playing";
+    card.appendChild(bar);
+    const frame = document.createElement("div");
+    frame.className = "clip-frame-wrap";
+    const iframe = document.createElement("iframe");
+    iframe.src = clip.player_url || clip.stream_url;
+    iframe.allow = "autoplay; fullscreen";
+    frame.appendChild(iframe);
+    const label = document.createElement("div");
+    label.className = "clip-label";
+    const left = document.createElement("span");
+    left.textContent = `${clip.shot_id || "shot"} · ${fmtTime(clip.start_s)}–${fmtTime(clip.end_s)}`;
+    const right = document.createElement("span");
+    right.className = "live-dot";
+    right.textContent = "now playing";
+    label.appendChild(left);
+    label.appendChild(right);
+    card.appendChild(frame);
+    card.appendChild(label);
+    root.insertBefore(card, root.firstChild);  // newest on top
+    bumpCount("clips");
+  }
+
+  // ===== Mentions =====
+  function appendMention(input, _result) {
+    const root = $("#col-mentions");
+    clearEmpty(root);
+    const card = document.createElement("div");
+    card.className = "mention";
+    card.innerHTML = `
+      <div class="head">
+        <span class="pill sev-${input.severity || "medium"}">${(input.severity || "?").toUpperCase()}</span>
+        <span class="pill cat">${input.category || "?"}</span>
+        <span class="pill time">${fmtTime(input.start_s)}–${fmtTime(input.end_s)}</span>
+        ${input.speaker_guess ? `<span class="pill speaker">${input.speaker_guess}</span>` : ""}
+      </div>
+      <div class="topic"></div>
+      <div class="quote"></div>
+      <div class="why"><b>Why it matters: </b><span></span></div>
+    `;
+    card.querySelector(".topic").textContent = input.topic || "(no topic)";
+    card.querySelector(".quote").textContent = `“${input.transcript_quote || ""}”`;
+    card.querySelector(".why span").textContent = input.why_it_matters || "";
+    root.appendChild(card);
+    root.scrollTop = root.scrollHeight;
+    bumpCount("mentions");
+  }
+
+  // ===== Event dispatch =====
+  function handleEvent(event) {
+    state.events.push(event);
+    appendTrace(event);
+    if (event.kind === "text") {
+      appendReasoning(event);
+    } else if (event.kind === "tool_use") {
+      rememberToolInput(event);
+      addChip(event);
+      if (event.name === "search_scenes" || event.name === "search_spoken") {
+        bumpQueryCounter(((event.payload || {}).input || {}).query);
+      }
+    } else if (event.kind === "tool_result") {
+      settleChip(event);
+      if (event.name === "record_mention") {
+        const input = takeToolInput(event);
+        const result = (event.payload || {}).result || {};
+        if (!event.payload.is_error && result.recorded) appendMention(input, result);
+      } else if (event.name === "compile_clip" && !event.payload.is_error) {
+        const result = (event.payload || {}).result || {};
+        for (const clip of result.clips || []) {
+          if (clip.player_url || clip.stream_url) appendClip(clip);
+        }
+      }
+    }
+  }
+
+  // ===== SSE attach =====
+  function attach(runId) {
+    if (state.source) state.source.close();
+    setRunId(runId);
+    setStatus("running");
+    const src = new EventSource(`${API_BASE}/runs/${runId}/events`);
+    state.source = src;
+    src.addEventListener("message", (e) => {
+      try { handleEvent(JSON.parse(e.data)); } catch {}
+    });
+    src.addEventListener("done", (e) => {
+      let payload = {}; try { payload = JSON.parse(e.data || "{}"); } catch {}
+      setStatus(payload.status || "finished");
+      src.close();
+    });
+    src.addEventListener("ping", () => {});
+    src.onerror = () => { setStatus("error"); src.close(); };
+  }
+
+  // ===== Profile modes =====
+  function activeProfileMode() {
+    return document.querySelector("input[name='profile-input-mode']:checked").value;
+  }
+
+  function syncProfilePanes() {
+    const mode = activeProfileMode();
+    for (const pane of document.querySelectorAll(".profile-pane")) {
+      pane.classList.toggle("active", pane.dataset.profilePane === mode);
+    }
+    if (mode === "yaml_path") {
+      $("#profile-status").textContent = "Saved YAML profile is selected.";
+    } else if (mode === "json") {
+      $("#profile-status").textContent = "Profile fields will be validated before use.";
+    } else {
+      $("#profile-status").textContent = "Quick text will be converted into a profile before use.";
+    }
+  }
+
+  function linesFrom(selector) {
+    return $(selector).value
+      .split(/\n|,/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  function filledProfile() {
+    return {
+      name: $("#p-name").value.trim(),
+      sector: $("#p-sector").value.trim(),
+      one_liner: $("#p-one-liner").value.trim(),
+      interests: linesFrom("#p-interests"),
+      risks: linesFrom("#p-risks"),
+      mention_triggers: linesFrom("#p-triggers"),
+      key_actors: linesFrom("#p-actors"),
+      competitors: linesFrom("#p-competitors"),
+      sensitivity: $("#p-sensitivity").value,
+    };
+  }
+
+  function profileResolveRequest() {
+    const mode = activeProfileMode();
+    if (mode === "yaml_path") {
+      return { mode, path: $("#f-client").value.trim() };
+    }
+    if (mode === "json") {
+      return { mode, profile: filledProfile() };
+    }
+    return { mode, text: $("#f-profile-text").value.trim() };
+  }
+
+  function showProfileResult(result) {
+    const preview = $("#profile-preview");
+    preview.classList.add("active");
+    preview.textContent = JSON.stringify(result, null, 2);
+    const warnings = result.warnings || [];
+    $("#profile-status").textContent = warnings.length
+      ? `Profile ready with ${warnings.length} warning${warnings.length === 1 ? "" : "s"}.`
+      : "Profile ready.";
+  }
+
+  async function resolveProfile() {
+    const request = profileResolveRequest();
+    const key = JSON.stringify(request);
+    if (cachedProfileKey === key && cachedProfileResponse) return cachedProfileResponse;
+    const r = await fetch(`${API_BASE}/profiles/resolve`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: key,
+    });
+    if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+    cachedProfileResponse = await r.json();
+    cachedProfileKey = key;
+    showProfileResult(cachedProfileResponse);
+    return cachedProfileResponse;
+  }
+
+  async function profilePayload() {
+    if (activeProfileMode() === "yaml_path") {
+      return { client: $("#f-client").value.trim() };
+    }
+    const resolved = await resolveProfile();
+    return { profile: resolved.profile };
+  }
+
+  async function runBodyFromKnownSource() {
+    const profileFields = await profilePayload();
+    return {
+      ...profileFields,
+      url: $("#f-url").value.trim() || null,
+      file: $("#f-file").value.trim() || null,
+      video_id: $("#f-videoid").value.trim() || null,
+    };
+  }
+
+  async function startRun(body) {
+    if (!body.url && !body.file && !body.video_id) {
+      alert("Provide url, file, or video_id");
+      return;
+    }
+    const r = await fetch(`${API_BASE}/runs`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+    const j = await r.json();
+    attach(j.run_id);
+  }
+
+  function selectedInstitutions() {
+    return Array.from(document.querySelectorAll(".f-inst:checked")).map((el) => el.value);
+  }
+
+  function setKnownUrl(candidate) {
+    $("#f-url").value = candidate.url || "";
+    $("#f-file").value = "";
+    $("#f-videoid").value = "";
+    $("#known-source-mode").open = true;
+  }
+
+  function candidateMeta(candidate) {
+    const terms = (candidate.matched_terms || []).slice(0, 4).join(", ");
+    const hint = candidate.ingest_hint === "url" ? "URL ingest" : "capture or URL";
+    return `${candidate.institution || "EU source"} · score ${candidate.score || 0} · ${hint}${terms ? ` · ${terms}` : ""}`;
+  }
+
+  function renderCandidates(candidates) {
+    const root = $("#candidate-list");
+    root.replaceChildren();
+    if (!candidates.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "No candidates found.";
+      root.appendChild(empty);
+      return;
+    }
+
+    for (const candidate of candidates) {
+      const card = document.createElement("div");
+      card.className = "candidate";
+
+      const title = document.createElement("div");
+      title.className = "candidate-title";
+      title.textContent = candidate.title || "(untitled)";
+
+      const meta = document.createElement("div");
+      meta.className = "candidate-meta";
+      meta.textContent = candidateMeta(candidate);
+
+      const reason = document.createElement("div");
+      reason.className = "candidate-reason";
+      reason.textContent = candidate.reason || "";
+
+      const actions = document.createElement("div");
+      actions.className = "candidate-actions";
+
+      const use = document.createElement("button");
+      use.className = "btn btn-ghost btn-sm";
+      use.textContent = "Use source";
+      use.addEventListener("click", () => setKnownUrl(candidate));
+
+      const open = document.createElement("button");
+      open.className = "btn btn-ghost btn-sm";
+      open.textContent = "Open";
+      open.addEventListener("click", () => window.open(candidate.url, "_blank", "noopener"));
+
+      actions.appendChild(use);
+      if (candidate.ingest_hint === "url") {
+        const start = document.createElement("button");
+        start.className = "btn btn-primary btn-sm";
+        start.textContent = "Start run";
+        start.addEventListener("click", async () => {
+          start.disabled = true;
+          try {
+            const profileFields = await profilePayload();
+            await startRun({
+              ...profileFields,
+              url: candidate.url,
+              file: null,
+              video_id: null,
+              name: candidate.title || null,
+            });
+          } catch (e) {
+            alert("Start failed: " + e.message);
+          } finally {
+            start.disabled = false;
+          }
+        });
+        actions.appendChild(start);
+      }
+      actions.appendChild(open);
+      card.appendChild(title);
+      card.appendChild(meta);
+      card.appendChild(reason);
+      card.appendChild(actions);
+      root.appendChild(card);
+    }
+  }
+
+  // ===== Event bindings =====
+  $("#f-discover").addEventListener("click", async () => {
+    const button = $("#f-discover");
+    const status = $("#discover-status");
+    button.disabled = true;
+    status.textContent = "Searching official EU video sources...";
+    try {
+      const profileFields = await profilePayload();
+      const r = await fetch(`${API_BASE}/sources/discover`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          ...profileFields,
+          query: $("#f-discover-query").value.trim(),
+          institutions: selectedInstitutions(),
+          limit: 12,
+        }),
+      });
+      if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+      const j = await r.json();
+      const candidates = j.candidates || [];
+      status.textContent = `${candidates.length} candidates found.`;
+      renderCandidates(candidates);
+    } catch (e) {
+      status.textContent = "Discovery failed.";
+      alert("Discovery failed: " + e.message);
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  for (const option of document.querySelectorAll("input[name='profile-input-mode']")) {
+    option.addEventListener("change", () => {
+      cachedProfileKey = "";
+      cachedProfileResponse = null;
+      $("#profile-preview").classList.remove("active");
+      syncProfilePanes();
+    });
+  }
+
+  $("#f-resolve-profile").addEventListener("click", async () => {
+    const button = $("#f-resolve-profile");
+    button.disabled = true;
+    $("#profile-status").textContent = "Resolving profile...";
+    try {
+      await resolveProfile();
+    } catch (e) {
+      $("#profile-status").textContent = "Profile resolution failed.";
+      alert("Profile failed: " + e.message);
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  $("#f-start").addEventListener("click", async () => {
+    $("#f-start").disabled = true;
+    try {
+      await startRun(await runBodyFromKnownSource());
+    } catch (e) {
+      alert("Start failed: " + e.message);
+    } finally {
+      $("#f-start").disabled = false;
+    }
+  });
+
+  // ===== Init =====
+  syncProfilePanes();
+  if (state.runId) attach(state.runId);
+  else setStatus("idle");
+
+})();
+</script>
+
+</body>
+</html>
