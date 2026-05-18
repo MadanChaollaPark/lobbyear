@@ -39,8 +39,43 @@
   .start-form button {
     background: var(--accent); color: #0d1117; border: 0; padding: 10px 16px;
     border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+  .start-form button.secondary {
+    background: var(--panel-2); color: var(--text); border: 1px solid var(--border);
+  }
   .start-form button:disabled { opacity: 0.4; cursor: not-allowed; }
   .empty { color: var(--muted); font-style: italic; }
+  .mode-grid { display: grid; gap: 10px; }
+  .source-mode {
+    border: 1px solid var(--border); border-radius: 8px; background: #0f151d;
+    overflow: hidden;
+  }
+  .source-mode summary {
+    cursor: pointer; padding: 10px 12px; color: var(--text); font-size: 13px;
+    font-weight: 650; background: var(--panel-2);
+  }
+  .source-mode .mode-body { padding: 4px 12px 12px; }
+  .hint { color: var(--muted); font-size: 12px; line-height: 1.4; margin: 8px 0 0; }
+  .institution-grid {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px; margin-top: 8px;
+  }
+  .institution-grid label {
+    display: flex; align-items: center; gap: 6px; margin: 0;
+    border: 1px solid var(--border); border-radius: 6px; padding: 7px 8px;
+    color: var(--text); background: var(--panel-2);
+  }
+  .institution-grid input { width: auto; }
+  .candidate-list { display: grid; gap: 8px; margin-top: 10px; }
+  .candidate {
+    border: 1px solid var(--border); background: var(--panel-2);
+    border-radius: 6px; padding: 10px;
+  }
+  .candidate .candidate-title { font-weight: 650; font-size: 13px; }
+  .candidate .candidate-meta { color: var(--muted); font-size: 11px; margin-top: 4px; }
+  .candidate .candidate-reason { color: #c9d1d9; font-size: 12px; margin-top: 6px; line-height: 1.4; }
+  .candidate-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .candidate-actions button { margin-top: 0; padding: 7px 10px; font-size: 12px; }
+  @media (max-width: 720px) { .institution-grid { grid-template-columns: 1fr; } }
 
   .layout { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 12px;
     margin-top: 12px; min-height: 60vh; }
@@ -123,11 +158,33 @@
   <div class="start-form">
     <label>Client profile (path on server)</label>
     <input id="f-client" value="clients/example_acme_tobacco.yaml" />
-    <label>Video source — pick one</label>
-    <input id="f-url" placeholder="https://www.youtube.com/watch?v=…" />
-    <input id="f-file" placeholder="/abs/path/to/local.mp4" style="margin-top:6px" />
-    <input id="f-videoid" placeholder="existing VideoDB video id" style="margin-top:6px" />
-    <button id="f-start">Start run</button>
+    <div class="mode-grid">
+      <details class="source-mode" id="known-source-mode" open>
+        <summary>Known video source</summary>
+        <div class="mode-body">
+          <label>Video source — pick one</label>
+          <input id="f-url" placeholder="https://www.youtube.com/watch?v=…" />
+          <input id="f-file" placeholder="/abs/path/to/local.mp4" style="margin-top:6px" />
+          <input id="f-videoid" placeholder="existing VideoDB video id" style="margin-top:6px" />
+          <button id="f-start">Start run</button>
+        </div>
+      </details>
+      <details class="source-mode" id="discover-source-mode">
+        <summary>Find related videos</summary>
+        <div class="mode-body">
+          <label>Search focus</label>
+          <input id="f-discover-query" placeholder="optional: committee, policy file, actor, or risk" />
+          <div class="institution-grid">
+            <label><input type="checkbox" class="f-inst" value="parliament" checked /> Parliament</label>
+            <label><input type="checkbox" class="f-inst" value="commission" checked /> Commission</label>
+            <label><input type="checkbox" class="f-inst" value="council" checked /> Council</label>
+          </div>
+          <button id="f-discover">Find videos</button>
+          <div class="hint" id="discover-status">Official EU source candidates will appear here.</div>
+          <div class="candidate-list" id="candidate-list"></div>
+        </div>
+      </details>
+    </div>
   </div>
 </section>
 
@@ -401,27 +458,150 @@ function attach(runId) {
   src.onerror = () => { setStatus("error"); src.close(); };
 }
 
-$("#f-start").addEventListener("click", async () => {
-  const body = {
+function runBodyFromKnownSource() {
+  return {
     client: $("#f-client").value.trim(),
     url: $("#f-url").value.trim() || null,
     file: $("#f-file").value.trim() || null,
     video_id: $("#f-videoid").value.trim() || null,
   };
+}
+
+async function startRun(body) {
   if (!body.url && !body.file && !body.video_id) {
     alert("Provide url, file, or video_id");
     return;
   }
-  $("#f-start").disabled = true;
+  const r = await fetch("/runs", {
+    method: "POST",
+    headers: {"content-type": "application/json"},
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+  const j = await r.json();
+  attach(j.run_id);
+}
+
+function selectedInstitutions() {
+  return Array.from(document.querySelectorAll(".f-inst:checked")).map((el) => el.value);
+}
+
+function setKnownUrl(candidate) {
+  $("#f-url").value = candidate.url || "";
+  $("#f-file").value = "";
+  $("#f-videoid").value = "";
+  $("#known-source-mode").open = true;
+}
+
+function candidateMeta(candidate) {
+  const terms = (candidate.matched_terms || []).slice(0, 4).join(", ");
+  const hint = candidate.ingest_hint === "url" ? "URL ingest" : "capture or URL";
+  return `${candidate.institution || "EU source"} · score ${candidate.score || 0} · ${hint}${terms ? ` · ${terms}` : ""}`;
+}
+
+function renderCandidates(candidates) {
+  const root = $("#candidate-list");
+  root.replaceChildren();
+  if (!candidates.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "No candidates found.";
+    root.appendChild(empty);
+    return;
+  }
+
+  for (const candidate of candidates) {
+    const card = document.createElement("div");
+    card.className = "candidate";
+
+    const title = document.createElement("div");
+    title.className = "candidate-title";
+    title.textContent = candidate.title || "(untitled)";
+
+    const meta = document.createElement("div");
+    meta.className = "candidate-meta";
+    meta.textContent = candidateMeta(candidate);
+
+    const reason = document.createElement("div");
+    reason.className = "candidate-reason";
+    reason.textContent = candidate.reason || "";
+
+    const actions = document.createElement("div");
+    actions.className = "candidate-actions";
+
+    const use = document.createElement("button");
+    use.className = "secondary";
+    use.textContent = "Use source";
+    use.addEventListener("click", () => setKnownUrl(candidate));
+
+    const start = document.createElement("button");
+    start.textContent = "Start run";
+    start.addEventListener("click", async () => {
+      start.disabled = true;
+      try {
+        await startRun({
+          client: $("#f-client").value.trim(),
+          url: candidate.url,
+          file: null,
+          video_id: null,
+          name: candidate.title || null,
+        });
+      } catch (e) {
+        alert("Start failed: " + e.message);
+      } finally {
+        start.disabled = false;
+      }
+    });
+
+    const open = document.createElement("button");
+    open.className = "secondary";
+    open.textContent = "Open";
+    open.addEventListener("click", () => window.open(candidate.url, "_blank", "noopener"));
+
+    actions.appendChild(use);
+    actions.appendChild(start);
+    actions.appendChild(open);
+    card.appendChild(title);
+    card.appendChild(meta);
+    card.appendChild(reason);
+    card.appendChild(actions);
+    root.appendChild(card);
+  }
+}
+
+$("#f-discover").addEventListener("click", async () => {
+  const button = $("#f-discover");
+  const status = $("#discover-status");
+  button.disabled = true;
+  status.textContent = "Searching official EU video sources...";
   try {
-    const r = await fetch("/runs", {
+    const r = await fetch("/sources/discover", {
       method: "POST",
       headers: {"content-type": "application/json"},
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        client: $("#f-client").value.trim(),
+        query: $("#f-discover-query").value.trim(),
+        institutions: selectedInstitutions(),
+        limit: 12,
+      }),
     });
     if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
     const j = await r.json();
-    attach(j.run_id);
+    const candidates = j.candidates || [];
+    status.textContent = `${candidates.length} candidates found.`;
+    renderCandidates(candidates);
+  } catch (e) {
+    status.textContent = "Discovery failed.";
+    alert("Discovery failed: " + e.message);
+  } finally {
+    button.disabled = false;
+  }
+});
+
+$("#f-start").addEventListener("click", async () => {
+  $("#f-start").disabled = true;
+  try {
+    await startRun(runBodyFromKnownSource());
   } catch (e) {
     alert("Start failed: " + e.message);
   } finally {
