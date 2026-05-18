@@ -96,7 +96,7 @@ def _summarize_transcript(segments: list[dict[str, Any]], limit: int = 12) -> st
     return "\n".join(lines)
 
 
-async def _run(
+async def run_lobby_agent_async(
     *,
     profile: ClientProfile,
     video: Any,
@@ -105,9 +105,10 @@ async def _run(
     scene_records: list[dict[str, Any]],
     transcript_segments: list[dict[str, Any]],
     briefing: Briefing,
-    max_turns: int,
-    on_event,
+    max_turns: int = 18,
+    on_event=None,
 ) -> tuple[ToolLoopResult, LobbySession]:
+    """Async entrypoint. Callers (CLI, server) provide their own on_event sink."""
     session = LobbySession(
         video=video,
         scene_index_id=scene_index_id,
@@ -177,7 +178,7 @@ def run_lobby_agent(
 
     try:
         return asyncio.run(
-            _run(
+            run_lobby_agent_async(
                 profile=profile,
                 video=video,
                 scene_index_id=scene_index_id,

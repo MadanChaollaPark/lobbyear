@@ -93,6 +93,46 @@ Output lands in `artifacts/<client-slug>-<timestamp>/`:
 - `trace.jsonl` — line-delimited events (reasoning + tool calls + tool results)
 - `viewer.html` — open in a browser, no build step needed
 
+## Run live (server + browser UI)
+
+The static viewer shows a finished briefing. For demo-grade live agent
+visibility, use the server:
+
+```bash
+uvicorn server.app:app --port 8765 --reload
+```
+
+Open <http://localhost:8765/> in a browser. Paste a video URL (or a local
+absolute path, or an existing VideoDB video id), click **Start run**, and watch:
+
+- Claude's reasoning stream into the left column.
+- Each tool call appear as a chip in the rail at the top — blue dot for
+  `search_scenes`, amber for `search_spoken` (so multimodal use is visible
+  at a glance).
+- The **distinct queries** counter tick up to 3+; the pill turns green
+  when the agentic acceptance threshold is met.
+- **Mention cards** materialize in the centre column as the agent commits
+  to each one — severity pill, transcript quote, why-it-matters.
+- **Evidence clips** embed in the right column the moment `compile_clip`
+  returns — newest first.
+
+Internals:
+
+- `server/app.py` — FastAPI app, mounts `/web` and `/artifacts`.
+- `server/runs.py` — `POST /runs` schedules an `asyncio.Task` that runs
+  the full analyze pipeline and pushes each agent event into a per-run
+  `asyncio.Queue`.
+- `server/sse.py` — `GET /runs/{id}/events` drains the queue and emits
+  SSE. Catches up late joiners on already-queued events.
+- `server/registry.py` — in-process `RunRegistry`; restart wipes state
+  (demo-grade).
+- `web/live.html` — single-file UI, no build step. Pass `?run=<id>` to
+  reattach to an existing stream after a refresh.
+
+The standalone CLI (`python -m lobbyear.run …`) still works and writes
+the same artifacts under `artifacts/`. Each run also writes a
+`viewer.html` copy alongside its `briefing.json` for static replay.
+
 ## Run live capture
 
 ```bash
